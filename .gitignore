@@ -2,3 +2,5 @@ ebin/*
 priv/*
 .eunit
 c_src/*.o
+c_src/*.obj
+nvcc_compile.cmd

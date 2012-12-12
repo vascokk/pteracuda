@@ -9,14 +9,16 @@ run() ->
     Data = lists:sort(F, lists:seq(1, 1000000)),
     io:format("Pid: ~p~n", [os:getpid()]),
     io:get_chars("Press any key when ready...", 1),
-    stress(Data, 1000000).
+    {ok, Ctx} = pteracuda_nifs:new_context(),
+    stress(Ctx, Data, 1000000).
 
-stress(_Data, 0) ->
+stress(_, _Data, 0) ->
     ok;
-stress(Data, Count) ->
-    {ok, B} = pteracuda_nifs:new_buffer(),
+stress(Ctx, Data, Count) ->
+    {ok, B} = pteracuda_nifs:new_int_buffer(),    
     pteracuda_nifs:write_buffer(B, Data),
-    pteracuda_nifs:sort_buffer(B),
+    %io:format("~p~n", [B]),
+    pteracuda_nifs:sort_buffer(Ctx,B),
     %{ok, SD} = pteracuda_nifs:read_buffer(B),
     pteracuda_nifs:destroy_buffer(B),
     io:format("~p~n", [1000000 - Count]),
@@ -25,5 +27,5 @@ stress(Data, Count) ->
     %%         io:format("~p...ok~n", [1000000 - Count]);
     %%     _ ->
     %%         io:format("~p...bad~n", [1000000 - Count])
-    %% end,
-    stress(Data, Count - 1).
+    %% end,    
+    stress(Ctx, Data, Count - 1).

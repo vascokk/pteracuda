@@ -14,9 +14,12 @@ start(N) ->
     {ok, C} = pteracuda_context:new(),
     {ok, B} = pteracuda_buffer:new(integer),
     pteracuda_buffer:write(B, D),
+    %pteracuda_nifs:write_buffer(B, D),
     {Time2, _} = timer:tc(pteracuda_demo, pteracuda_sort, [C, B, D]),
     io:format(".~n"),
-    io:format("Erlang: ~pms, CUDA: ~pms~n", [Time1 / 1000, Time2 / 1000]).
+    io:format("Erlang: ~pms, CUDA: ~pms~n", [Time1 / 1000, Time2 / 1000]),
+    pteracuda_buffer:destroy(B),
+    pteracuda_context:destroy(C).
 
 pteracuda_sort(C, B, D) ->
     pteracuda_buffer:write(B, D),

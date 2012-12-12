@@ -15,7 +15,7 @@ PCudaString::PCudaString() {
 
 PCudaString::PCudaString(const std::string& other) {
     this->len = other.length();
-    this->ptr = thrust::device_malloc(this->len + 1);
+    this->ptr = thrust::device_malloc<char>(this->len + 1);
     this->str = raw_pointer_cast(this->ptr);
     cudaMemcpy(this->str, other.c_str(), this->len, cudaMemcpyHostToDevice);
 }
