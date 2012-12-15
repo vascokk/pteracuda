@@ -16,4 +16,7 @@ void pcuda_float_minmax(std::vector<double> *data, double *minmax);
 
 // Work in progress
 bool pcuda_string_sort(std::vector<std::string> *data);
+
+void pcuda_dgemm(std::vector<double> *a, std::vector<double> *b, std::vector<double> *c,  const int m, const int k, const int n);
+void pcuda_mmul(std::vector<double> *a, std::vector<double> *b, std::vector<double> *c,  const int m, const int k, const int n);
 #endif

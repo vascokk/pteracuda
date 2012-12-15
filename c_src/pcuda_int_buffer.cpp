@@ -60,6 +60,7 @@ bool PCudaIntBuffer::contains(ErlNifEnv *env, ERL_NIF_TERM rawTarget) {
     }
 }
 
+
 ERL_NIF_TERM PCudaIntBuffer::toErlTerms(ErlNifEnv *env) {
     std::vector<long>::iterator iter;
     ERL_NIF_TERM retval = enif_make_list(env, 0);

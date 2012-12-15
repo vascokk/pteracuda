@@ -9,7 +9,9 @@
 enum PCudaBufferTypes {
     BUF_TYPE_INTEGER,
     BUF_TYPE_STRING,
-    BUF_TYPE_FLOAT
+    BUF_TYPE_FLOAT,
+    BUF_TYPE_MATRIX_INTEGER,
+    BUF_TYPE_MATRIX_FLOAT
 };
 
 class PCudaBuffer {
@@ -67,6 +69,7 @@ public:
     virtual ERL_NIF_TERM intersect(ErlNifEnv *env, PCudaBuffer *other);
     virtual ERL_NIF_TERM minmax(ErlNifEnv *env);
 
+
 protected:
     std::vector<double> *data;
 };
@@ -91,4 +94,63 @@ public:
 protected:
     std::vector<std::string> *data;
 };
+
+//////////////// MATRIX Buffers
+/////        WORK IN PROGRESS !!!
+/////////////////////
+class PCudaMatrixBuffer : public PCudaBuffer {
+    virtual bool sort() { throw "Method sort() not supported for PCudaMatrixBuffer!";};
+    virtual bool contains(ErlNifEnv *env, ERL_NIF_TERM rawTarget) { throw "Method contains() not supported for PCudaMatrixBuffer!";};
+    virtual void delete_at(unsigned long position)  { throw "Method delete_at() not supported for PCudaMatrixBuffer!";};
+    virtual bool insert_at(unsigned long position, ErlNifEnv *env, ERL_NIF_TERM value) { throw "Method insert_at() not supported for PCudaMatrixBuffer!";};
+    virtual bool copy(PCudaBuffer *src)  { throw "Method copy() not supported for PCudaMatrixBuffer!";};
+    virtual ERL_NIF_TERM intersect(ErlNifEnv *env, PCudaBuffer *other)  { throw "Method intersect() not supported for PCudaMatrixBuffer!";};
+    virtual ERL_NIF_TERM minmax(ErlNifEnv *env)  { throw "Method minmax() not supported for PCudaMatrixBuffer!";};
+public:
+    virtual ~PCudaMatrixBuffer() { };
+    virtual unsigned int size() = 0;
+    virtual PCudaBufferTypes type() = 0;
+    virtual void write(ErlNifEnv *env, ERL_NIF_TERM data) = 0;
+    virtual void clear() = 0;
+    virtual ERL_NIF_TERM toErlTerms(ErlNifEnv *env) = 0;
+    virtual void mmul(PCudaMatrixBuffer *A, PCudaMatrixBuffer *B, const int m, const int k, const int n) = 0;
+    virtual unsigned  rows() {return _rows;};
+    virtual unsigned  cols() {return _cols;};
+protected:
+    unsigned  _rows;
+    unsigned  _cols;
+};
+
+class PCudaMatrixIntBuffer : public PCudaMatrixBuffer {
+public:
+    PCudaMatrixIntBuffer();
+    PCudaMatrixIntBuffer(unsigned  rows, unsigned  cols);
+    virtual ~PCudaMatrixIntBuffer();
+    virtual unsigned int size();
+    virtual PCudaBufferTypes type() { return BUF_TYPE_MATRIX_INTEGER; };
+    virtual ERL_NIF_TERM toErlTerms(ErlNifEnv *env);
+    virtual void write(ErlNifEnv *env, ERL_NIF_TERM data);
+    virtual void clear();
+    virtual void mmul(PCudaMatrixBuffer *A, PCudaMatrixBuffer *B, const int m, const int k, const int n) { throw "Method mmul() not supported for PCudaMatrixIntBuffer!";};
+
+protected:
+    std::vector<long> *data;
+};
+
+class PCudaMatrixFloatBuffer : public PCudaMatrixBuffer {
+public:
+    PCudaMatrixFloatBuffer();
+    PCudaMatrixFloatBuffer(unsigned  rows, unsigned  cols);
+    virtual ~PCudaMatrixFloatBuffer();
+    virtual unsigned int size();
+    virtual PCudaBufferTypes type() { return BUF_TYPE_MATRIX_FLOAT; };
+    virtual ERL_NIF_TERM toErlTerms(ErlNifEnv *env);
+    virtual void write(ErlNifEnv *env, ERL_NIF_TERM data);
+    virtual void clear();
+    virtual void mmul(PCudaMatrixBuffer *A, PCudaMatrixBuffer *B, const int m, const int k, const int n);
+
+protected:
+    std::vector<double> *data;
+};
+
 #endif

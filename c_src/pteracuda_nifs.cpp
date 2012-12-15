@@ -50,6 +50,12 @@ extern "C" {
     ERL_NIF_TERM pteracuda_nifs_copy_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_buffer_intersection(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_buffer_minmax(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+    
+    ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+
+    ERL_NIF_TERM pteracuda_nifs_new_matrix_int_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+    ERL_NIF_TERM pteracuda_nifs_new_matrix_float_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+
 
     static ErlNifFunc pteracuda_nif_funcs[] = {
         {"new_context", 0, pteracuda_nifs_new_context},
@@ -69,7 +75,16 @@ extern "C" {
         {"buffer_contains", 3, pteracuda_nifs_buffer_contains},
         {"copy_buffer", 2, pteracuda_nifs_copy_buffer},
         {"buffer_intersection", 3, pteracuda_nifs_buffer_intersection},
-        {"buffer_minmax", 2, pteracuda_nifs_buffer_minmax}
+        {"buffer_minmax", 2, pteracuda_nifs_buffer_minmax},
+
+        {"mmul", 7, pteracuda_nifs_mmul},
+
+        {"new_matrix_int_buffer", 1, pteracuda_nifs_new_matrix_int_buffer},
+        {"new_matrix_float_buffer", 1, pteracuda_nifs_new_matrix_float_buffer},
+        {"new_matrix_int_buffer", 2, pteracuda_nifs_new_matrix_int_buffer},
+        {"new_matrix_float_buffer", 2, pteracuda_nifs_new_matrix_float_buffer}
+
+
     };
 }
 
@@ -80,6 +95,13 @@ struct PCudaBufferRef {
     PCudaBuffer *buffer;
     bool destroyed;
 };
+
+
+struct PCudaMatrixBufferRef {
+    PCudaMatrixBuffer *buffer;
+    bool destroyed;
+};
+
 
 struct PCudaContextRef {
     CUcontext ctx;
@@ -185,6 +207,7 @@ ERL_NIF_TERM pteracuda_nifs_new_float_buffer(ErlNifEnv *env, int argc, const ERL
     return enif_make_tuple2(env, ATOM_OK, res);
 }
 
+
 ERL_NIF_TERM pteracuda_nifs_destroy_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     PCudaBufferRef *ref;
     if (argc != 1 || !enif_get_resource(env, argv[0], pteracuda_buffer_resource, (void **) &ref)) {
@@ -267,7 +290,9 @@ ERL_NIF_TERM pteracuda_nifs_read_buffer(ErlNifEnv *env, int argc, const ERL_NIF_
     if (argc != 1 || !enif_get_resource(env, argv[0], pteracuda_buffer_resource, (void **) &ref)) {
         return enif_make_badarg(env);
     }
-    ERL_NIF_TERM data = ref->buffer->toErlTerms(env);
+
+    ERL_NIF_TERM data = ref->buffer->toErlTerms(env);    
+    
     return enif_make_tuple2(env, ATOM_OK, data);
 }
 
@@ -342,3 +367,92 @@ ERL_NIF_TERM pteracuda_nifs_buffer_minmax(ErlNifEnv *env, int argc, const ERL_NI
     cuCtxSetCurrent(ctxRef->ctx);
     return enif_make_tuple2(env, ATOM_OK, bufRef->buffer->minmax(env));
 }
+
+
+//////////////////// Matrix buffer
+ERL_NIF_TERM pteracuda_nifs_new_matrix_int_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    unsigned rows;
+    unsigned cols;    
+    bool from_matrix = false;
+
+    if (argc == 1) {
+        ERL_NIF_TERM head;
+        ERL_NIF_TERM tail;
+        enif_get_list_length(env, argv[0], &rows);
+        enif_get_list_cell(env, argv[0], &head, &tail);
+        enif_get_list_length(env, head, &cols);
+        from_matrix = true;
+    }else if (argc !=2 || !enif_get_uint(env, argv[0], &rows) || !enif_get_uint(env, argv[1], &cols)) {
+        return enif_make_badarg(env);
+    }
+    
+    PCudaBufferRef *ref = (PCudaBufferRef *) enif_alloc_resource(pteracuda_buffer_resource, sizeof(PCudaBufferRef));
+
+    if (!ref) {
+        return OOM_ERROR;
+    }
+
+    ref->buffer = new PCudaMatrixIntBuffer(rows, cols);
+    ref->destroyed = false;
+
+    if (from_matrix) ref->buffer->write(env, argv[0]);
+    
+    ERL_NIF_TERM res = enif_make_resource(env, ref);
+    enif_release_resource(ref);
+
+    return enif_make_tuple2(env, ATOM_OK, res);
+}
+
+ERL_NIF_TERM pteracuda_nifs_new_matrix_float_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    unsigned  rows; 
+    unsigned  cols;
+    bool from_matrix = false;
+
+    if (argc == 1) {
+        ERL_NIF_TERM head;
+        ERL_NIF_TERM tail;
+        enif_get_list_length(env, argv[0], &rows);
+        enif_get_list_cell(env, argv[0], &head, &tail);
+        enif_get_list_length(env, head, &cols);
+        from_matrix = true;
+    }else if (argc !=2 || !enif_get_uint(env, argv[0], &rows) || !enif_get_uint(env, argv[1], &cols)) {
+        return enif_make_badarg(env);
+    }
+
+    PCudaBufferRef *ref = (PCudaBufferRef *) enif_alloc_resource(pteracuda_buffer_resource, sizeof(PCudaBufferRef));
+    if (!ref) {
+        return OOM_ERROR;
+    }
+
+    ref->buffer = new PCudaMatrixFloatBuffer(rows, cols);
+    ref->destroyed = false;
+
+    if (from_matrix) ref->buffer->write(env, argv[0]);
+
+    ERL_NIF_TERM res = enif_make_resource(env, ref);
+    enif_release_resource(ref);
+    return enif_make_tuple2(env, ATOM_OK, res);
+}
+
+
+///////////////////Matrix operations
+ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    PCudaContextRef *ctxRef;
+    PCudaMatrixBufferRef *ref_A, *ref_B, *ref_C;
+    unsigned long  m, n, k;
+    if (argc != 7 || !enif_get_resource(env, argv[0], pteracuda_context_resource, (void **) &ctxRef) ||
+        !enif_get_resource(env, argv[1], pteracuda_buffer_resource, (void **) &ref_A) ||
+        !enif_get_resource(env, argv[2], pteracuda_buffer_resource, (void **) &ref_B)||
+        !enif_get_resource(env, argv[3], pteracuda_buffer_resource, (void **) &ref_C)||
+        !enif_get_ulong(env, argv[4], &m)||
+        !enif_get_ulong(env, argv[5], &k)||
+        !enif_get_ulong(env, argv[6], &n)) {
+        return enif_make_badarg(env);
+    }
+    cuCtxSetCurrent(ctxRef->ctx);
+    ref_C->buffer->mmul(ref_A->buffer, ref_B->buffer, m, k, n);
+    return ATOM_OK;
+}
+
+
+

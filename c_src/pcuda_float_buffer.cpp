@@ -109,3 +109,4 @@ ERL_NIF_TERM PCudaFloatBuffer::minmax(ErlNifEnv *env) {
     pcuda_float_minmax(this->data, &minmax[0]);
     return enif_make_tuple2(env, enif_make_long(env, minmax[0]), enif_make_long(env, minmax[1]));
 }
+

@@ -1,7 +1,10 @@
 #include <vector>
 #include <stdio.h>
+#include <iostream>
+#include <algorithm>
 
 #include "cuda.h"
+#include "cublas_v2.h"
 
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
@@ -106,14 +109,14 @@ bool pcuda_string_sort(std::vector<std::string> *data) {
     return true;
 }
 
-bool pcuda_integer_binary_search(std::vector<long> *data, long target) {
+bool pcuda_integer_binary_search(std::vector<long> *data, const long target) {
     thrust::device_vector<long> device = *data;
     return thrust::binary_search(device.begin(), device.end(), target, thrust::less<long>());
 }
 
 bool pcuda_float_binary_search(std::vector<double> *data, double target) {
     thrust::device_vector<double> device = *data;
-    return thrust::binary_search(device.begin(), device.end(), target, thrust::less<double>());
+    return thrust::binary_search(device.begin(), device.end(), target);
 }
 
 void pcuda_integer_intersection(std::vector<long> *first, std::vector<long> *second,
@@ -140,4 +143,41 @@ void pcuda_float_minmax(std::vector<double> *data, double *minmax) {
                  std::vector<double>::iterator> result = thrust::minmax_element(data->begin(), data->end());
     minmax[0] = *result.first;
     minmax[1] = *result.second;
+}
+
+struct CastToFloat
+{
+    float operator()(double value) const { return static_cast<float>(value);}
+};
+
+// Multiply the arrays A and B on GPU and save the result in C
+// C(m,n) = A(m,k) * B(k,n)
+void pcuda_mmul(std::vector<double> *a, std::vector<double> *b, std::vector<double> *c,  const int m, const int k, const int n){
+    int lda=m,ldb=k,ldc=m;
+    const float alf = 1;
+    const float bet = 0;
+    const float *alpha = &alf;
+    const float *beta = &bet;
+
+    //Fallback to float to support cuda architecture < 1.3  
+    thrust::device_vector<float> d_a;
+    thrust::device_vector<float> d_b;
+    thrust::device_vector<float> d_c;
+
+    std::transform(a->begin(), a->end(), std::back_inserter(d_a), CastToFloat());
+    std::transform(b->begin(), b->end(), std::back_inserter(d_b), CastToFloat());
+    std::transform(c->begin(), c->end(), std::back_inserter(d_c), CastToFloat());
+ 
+    // Create a handle for CUBLAS
+    cublasHandle_t handle;
+    cublasCreate(&handle);
+
+    // Do the actual multiplication
+    cublasStatus_t res = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha, thrust::raw_pointer_cast(&d_a[0]), lda, thrust::raw_pointer_cast(&d_b[0]), ldb, beta, thrust::raw_pointer_cast(&d_c[0]), ldc);
+    //std::cout << "\ncublasSgemm Status = " << res << std::endl;
+
+    thrust::copy(d_c.begin(), d_c.end(), c->begin());
+
+    // Destroy the handle
+    cublasDestroy(handle);
 }
