@@ -110,3 +110,13 @@ ERL_NIF_TERM PCudaFloatBuffer::minmax(ErlNifEnv *env) {
     return enif_make_tuple2(env, enif_make_long(env, minmax[0]), enif_make_long(env, minmax[1]));
 }
 
+/*void PCudaFloatBuffer::gemv(const int m, const int n, const double alpha, PCudaBuffer *A, PCudaBuffer *X, const double beta){
+    if (A->type() == BUF_TYPE_MATRIX_FLOAT && X->type() == BUF_TYPE_FLOAT) {
+        PCudaMatrixFloatBuffer *fbA = (PCudaMatrixFloatBuffer *) A;
+        PCudaFloatBuffer *fbX = (PCudaFloatBuffer *) X;
+        //PCudaMatrixFloatBuffer *fbC = (PCudaMatrixFloatBuffer *) C;
+        pcuda_gemv(m, n, alpha, fbA->data, fbX->data, beta, this->data); 
+    }
+    
+}*/
+

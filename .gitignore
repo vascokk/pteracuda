@@ -6,3 +6,4 @@ c_src/*.obj
 nvcc_compile.cmd
 pteracuda.sublime-project
 pteracuda.sublime-workspace
+tests.txt

@@ -167,7 +167,7 @@ void pcuda_mmul(std::vector<double> *a, std::vector<double> *b, std::vector<doub
     std::transform(a->begin(), a->end(), std::back_inserter(d_a), CastToFloat());
     std::transform(b->begin(), b->end(), std::back_inserter(d_b), CastToFloat());
     std::transform(c->begin(), c->end(), std::back_inserter(d_c), CastToFloat());
- 
+
     // Create a handle for CUBLAS
     cublasHandle_t handle;
     cublasCreate(&handle);
@@ -177,6 +177,36 @@ void pcuda_mmul(std::vector<double> *a, std::vector<double> *b, std::vector<doub
     //std::cout << "\ncublasSgemm Status = " << res << std::endl;
 
     thrust::copy(d_c.begin(), d_c.end(), c->begin());
+    // Destroy the handle
+    cublasDestroy(handle);
+}
+
+void pcuda_gemv(const int m, const int n, const double alpha, std::vector<double> *a, std::vector<double> *x,const double beta, std::vector<double> *y){
+    int lda=m;
+    const float alf = (float)alpha;
+    const float bet = (float)beta;
+    const float *_alpha = &alf;
+    const float *_beta =  &bet;
+    int incx=1, incy=1;
+
+    //Fallback to float to support cuda architecture < 1.3  
+    thrust::device_vector<float> d_a;
+    thrust::device_vector<float> d_x;
+    thrust::device_vector<float> d_y;
+
+    std::transform(a->begin(), a->end(), std::back_inserter(d_a), CastToFloat());
+    std::transform(x->begin(), x->end(), std::back_inserter(d_x), CastToFloat());
+    std::transform(y->begin(), y->end(), std::back_inserter(d_y), CastToFloat());
+ 
+    // Create a handle for CUBLAS
+    cublasHandle_t handle;
+    cublasCreate(&handle);
+
+    // Do the actual multiplication
+    cublasStatus_t res = cublasSgemv(handle, CUBLAS_OP_N, m, n, _alpha, thrust::raw_pointer_cast(&d_a[0]), lda, thrust::raw_pointer_cast(&d_x[0]), incx, _beta, thrust::raw_pointer_cast(&d_y[0]), incy);
+    //std::cout << "\ncublasSgemv Status = " << res << std::endl;
+
+    thrust::copy(d_y.begin(), d_y.end(), y->begin());
 
     // Destroy the handle
     cublasDestroy(handle);

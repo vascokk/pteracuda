@@ -5,6 +5,7 @@
 PCudaMatrixIntBuffer::PCudaMatrixIntBuffer() {
     this->data = new std::vector<long>();
     this->_rows = 1;
+    this->_cols = data->size();
 }
 
 PCudaMatrixIntBuffer::PCudaMatrixIntBuffer(unsigned  rows, unsigned  cols) {
@@ -25,12 +26,15 @@ void PCudaMatrixIntBuffer::write(ErlNifEnv *env, ERL_NIF_TERM data) {
     ERL_NIF_TERM head_row;
     ERL_NIF_TERM head;
     long value;
+    double dvalue;
 
    this->data->clear();
    while (enif_get_list_cell(env, data, &head_row, &data)) 
     while (enif_get_list_cell(env, head_row, &head, &head_row))
         if (enif_get_long(env, head, &value)) {
             this->data->push_back(value);
+        }else if (enif_get_double(env,  head, &dvalue)) {
+            this->data->push_back((long)dvalue);
         }
     
 
@@ -69,14 +73,3 @@ ERL_NIF_TERM PCudaMatrixIntBuffer::toErlTerms(ErlNifEnv *env) {
 void PCudaMatrixIntBuffer::clear() {
     this->data->clear();
 }
-
-
-/*void PCudaMatrixIntBuffer::mmul(PCudaMatrixBuffer *A, PCudaMatrixBuffer *B, const int m, const int k, const int n){
-    if (A->type() == BUF_TYPE_MATRIX_INTEGER && B->type() == BUF_TYPE_MATRIX_INTEGER) {
-        PCudaMatrixIntBuffer *fbA = (PCudaMatrixIntBuffer *) A;
-        PCudaMatrixIntBuffer *fbB = (PCudaMatrixIntBuffer *) B;
-        //PCudaMatrixIntBuffer *fbC = (PCudaMatrixIntBuffer *) C;
-        pcuda_mmul(fbA->data, fbB->data, this->data, m, k , n); 
-    }
-    
-}*/

@@ -20,12 +20,16 @@
 //
 // -------------------------------------------------------------------
 #include <stdio.h>
+#include <iostream>
+#include <vector>
 
 #include "cuda.h"
 #include "cuda_runtime_api.h"
 #include "erl_nif.h"
 
 #include "pcuda_buffer.h"
+#include "pcuda_ops.h"
+#include "pteracuda_blas.h"
 
 extern "C" {
     static int pteracuda_on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info);
@@ -50,11 +54,12 @@ extern "C" {
     ERL_NIF_TERM pteracuda_nifs_copy_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_buffer_intersection(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_buffer_minmax(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    
-    ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
     ERL_NIF_TERM pteracuda_nifs_new_matrix_int_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_new_matrix_float_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+    
+    ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+    ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
 
     static ErlNifFunc pteracuda_nif_funcs[] = {
@@ -77,12 +82,13 @@ extern "C" {
         {"buffer_intersection", 3, pteracuda_nifs_buffer_intersection},
         {"buffer_minmax", 2, pteracuda_nifs_buffer_minmax},
 
-        {"mmul", 7, pteracuda_nifs_mmul},
-
         {"new_matrix_int_buffer", 1, pteracuda_nifs_new_matrix_int_buffer},
         {"new_matrix_float_buffer", 1, pteracuda_nifs_new_matrix_float_buffer},
         {"new_matrix_int_buffer", 2, pteracuda_nifs_new_matrix_int_buffer},
-        {"new_matrix_float_buffer", 2, pteracuda_nifs_new_matrix_float_buffer}
+        {"new_matrix_float_buffer", 2, pteracuda_nifs_new_matrix_float_buffer},
+
+        {"mmul", 7, pteracuda_nifs_mmul},
+        {"gemv", 8, pteracuda_nifs_gemv}
 
 
     };
@@ -96,11 +102,10 @@ struct PCudaBufferRef {
     bool destroyed;
 };
 
-
-struct PCudaMatrixBufferRef {
+/*struct PCudaMatrixBufferRef {
     PCudaMatrixBuffer *buffer;
     bool destroyed;
-};
+};*/
 
 
 struct PCudaContextRef {
@@ -438,7 +443,7 @@ ERL_NIF_TERM pteracuda_nifs_new_matrix_float_buffer(ErlNifEnv *env, int argc, co
 ///////////////////Matrix operations
 ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     PCudaContextRef *ctxRef;
-    PCudaMatrixBufferRef *ref_A, *ref_B, *ref_C;
+    PCudaBufferRef *ref_A, *ref_B, *ref_C;
     unsigned long  m, n, k;
     if (argc != 7 || !enif_get_resource(env, argv[0], pteracuda_context_resource, (void **) &ctxRef) ||
         !enif_get_resource(env, argv[1], pteracuda_buffer_resource, (void **) &ref_A) ||
@@ -450,7 +455,36 @@ ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
         return enif_make_badarg(env);
     }
     cuCtxSetCurrent(ctxRef->ctx);
-    ref_C->buffer->mmul(ref_A->buffer, ref_B->buffer, m, k, n);
+
+    pcuda_mmul(((PCudaMatrixFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_B->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_C->buffer)->get_data(), m, k, n);
+    return ATOM_OK;
+}
+
+//pteracuda_nifs:gemv(Ctx, _m, _n, _alpha, A, X, _betha, Y),
+ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    PCudaContextRef *ctxRef;
+   PCudaBufferRef *ref_A, *ref_X, *ref_Y;
+    
+
+    unsigned long  m, n;
+    double alpha, beta;
+
+    if (argc != 8 || 
+        !enif_get_resource(env, argv[0], pteracuda_context_resource, (void **) &ctxRef) ||
+        !enif_get_ulong(env, argv[1], &m)||
+        !enif_get_ulong(env, argv[2], &n)||
+        !enif_get_double(env, argv[3], &alpha)||
+        !enif_get_resource(env, argv[4], pteracuda_buffer_resource, (void **) &ref_A) ||
+        !enif_get_resource(env, argv[5], pteracuda_buffer_resource, (void **) &ref_X)||
+        !enif_get_double(env, argv[6], &beta)||
+        !enif_get_resource(env, argv[7], pteracuda_buffer_resource, (void **) &ref_Y)) {
+
+        return enif_make_badarg(env);
+    }
+
+    cuCtxSetCurrent(ctxRef->ctx);
+    pcuda_gemv(m, n, alpha, ((PCudaMatrixFloatBuffer *)ref_A->buffer)->get_data(), ((PCudaFloatBuffer *)ref_X->buffer)->get_data(), beta, ((PCudaFloatBuffer *)ref_Y->buffer)->get_data());
+
     return ATOM_OK;
 }
 
