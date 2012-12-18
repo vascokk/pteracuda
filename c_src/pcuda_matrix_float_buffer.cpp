@@ -56,8 +56,9 @@ void PCudaMatrixFloatBuffer::write(ErlNifEnv *env, ERL_NIF_TERM data) {
             ++idx;
         }
     
-        /*for(std::vector<double>::iterator iter = this->data->begin(); iter != this->data->end(); ++iter)
-            std::cout<<"this->data = "<< *iter <<std::endl;*/
+        if(idx != this->data->size()){ 
+            throw std::runtime_error("ERROR: Data does not fit the matrix size.");
+        }
 }
 
 

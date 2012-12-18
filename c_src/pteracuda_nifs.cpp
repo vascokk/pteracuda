@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <exception>
 
 #include "cuda.h"
 #include "cuda_runtime_api.h"
@@ -29,7 +30,7 @@
 
 #include "pcuda_buffer.h"
 #include "pcuda_ops.h"
-#include "pteracuda_blas.h"
+
 
 extern "C" {
     static int pteracuda_on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info);
@@ -230,10 +231,19 @@ ERL_NIF_TERM pteracuda_nifs_write_buffer(ErlNifEnv *env, int argc, const ERL_NIF
     if (argc != 2 || !enif_get_resource(env, argv[0], pteracuda_buffer_resource, (void **) &ref)) {
         return enif_make_badarg(env);
     }
-    ref->buffer->write(env, argv[1]);
+
+    try
+    {
+        ref->buffer->write(env, argv[1]);
+    }
+    catch (std::exception& e)
+    {
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env,e.what()));
+    }
+
     return ATOM_OK;
 }
-
+//invalid vector<T> subscript Check the matrix dimensions.
 ERL_NIF_TERM pteracuda_nifs_buffer_delete(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     PCudaBufferRef *ref;
     unsigned long position;
@@ -441,6 +451,7 @@ ERL_NIF_TERM pteracuda_nifs_new_matrix_float_buffer(ErlNifEnv *env, int argc, co
 
 
 ///////////////////Matrix operations
+// C(m,n) = A(m,k) * B(k,n)
 ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     PCudaContextRef *ctxRef;
     PCudaBufferRef *ref_A, *ref_B, *ref_C;
@@ -454,8 +465,22 @@ ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
         !enif_get_ulong(env, argv[6], &n)) {
         return enif_make_badarg(env);
     }
-    cuCtxSetCurrent(ctxRef->ctx);
 
+    if(((PCudaMatrixFloatBuffer*)ref_A->buffer)->rows() != m || ((PCudaMatrixFloatBuffer*)ref_A->buffer)->cols() != k){
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix A dimensions do not match m,k parameters")); 
+    }
+
+
+    if(((PCudaMatrixFloatBuffer*)ref_B->buffer)->rows() != k || ((PCudaMatrixFloatBuffer*)ref_B->buffer)->cols() != n){
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix B dimensions do not match k,n parameters")); 
+    }
+
+
+    if(((PCudaMatrixFloatBuffer*)ref_C->buffer)->rows() != m || ((PCudaMatrixFloatBuffer*)ref_C->buffer)->cols() != n){
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix C dimensions do not match m,n parameters")); 
+    }
+
+    cuCtxSetCurrent(ctxRef->ctx);
     pcuda_mmul(((PCudaMatrixFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_B->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_C->buffer)->get_data(), m, k, n);
     return ATOM_OK;
 }
@@ -481,6 +506,11 @@ ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
 
         return enif_make_badarg(env);
     }
+
+    if(((PCudaMatrixFloatBuffer*)ref_A->buffer)->rows() != m || ((PCudaMatrixFloatBuffer*)ref_A->buffer)->cols() != n){
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix A dimensions do not match m,n parameters")); 
+    }
+
 
     cuCtxSetCurrent(ctxRef->ctx);
     pcuda_gemv(m, n, alpha, ((PCudaMatrixFloatBuffer *)ref_A->buffer)->get_data(), ((PCudaFloatBuffer *)ref_X->buffer)->get_data(), beta, ((PCudaFloatBuffer *)ref_Y->buffer)->get_data());

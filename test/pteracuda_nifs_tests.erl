@@ -234,7 +234,23 @@ create_float_matrix_with_int_values_2_test() ->
     {ok, [[3.0,2.0,44.0,8.0],[5.0,7.0,12.0,21.0]]} = pteracuda_nifs:read_buffer(Buf),
     ok = pteracuda_nifs:destroy_buffer(Buf).
 
-%Float matrix operations only supported
+
+negative_create_float_matrix_with_wrong_dimensions_test() ->
+    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(4,3), %must be (4,4)
+    A = [[16.0,2.0,3.0,13.0],[5.0,11.0,10.0,8.0],[9.0,7.0,6.0,12.0],[4.0,14.0,15.0,1.0]],
+    {error,_} = pteracuda_nifs:write_buffer(Buf, A),
+    %{ok, A} = pteracuda_nifs:read_buffer(Buf),
+    ok = pteracuda_nifs:destroy_buffer(Buf).
+
+
+negative_create_float_matrix_with_wrong_dimensions_less_data_test() ->
+    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(4,4), 
+    A = [[16.0,2.0,3.0,13.0],[5.0,11.0,10.0,8.0],[9.0,7.0,6.0,12.0]], %one row less
+    {error,_} = pteracuda_nifs:write_buffer(Buf, A),
+    %{ok, A} = pteracuda_nifs:read_buffer(Buf),
+    ok = pteracuda_nifs:destroy_buffer(Buf).
+
+% %Float matrix operations only supported
 mmul_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
     A = [[7,8,15,3],[4,4,6,2],[3,7,99,4]], %row major
@@ -253,7 +269,26 @@ mmul_test()->
     ok = pteracuda_nifs:destroy_buffer(Buf_C),
     pteracuda_nifs:destroy_context(Ctx).
 
-%y = α op ( A ) x + β y
+negative_mmul_wrong_A_dim_test()->
+    {ok, Ctx} = pteracuda_nifs:new_context(),
+    A = [[7,8,15,3],[4,4,6,2],[3,7,99,4]], %row major
+    B = [[3,5],[2,7],[44,12],[8,21]], %row major
+    _m = 4,%num_rows_A  WRONG!!! must be 3
+    _k = 4,%num_cols_A
+    _n = 2,%num_cols_B
+    C = [[721.0, 334.0],[300.0,162.0],[4411.0,1336.0]], %row major
+    {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
+    {ok, Buf_B} = pteracuda_nifs:new_matrix_float_buffer(B),
+    {ok, Buf_C} = pteracuda_nifs:new_matrix_float_buffer(_m,_n),
+    {error,_} = pteracuda_nifs:mmul(Ctx, Buf_A, Buf_B, Buf_C, _m, _k, _n),
+    {ok, _} = pteracuda_nifs:read_buffer(Buf_C),
+    ok = pteracuda_nifs:destroy_buffer(Buf_A),
+    ok = pteracuda_nifs:destroy_buffer(Buf_B),
+    ok = pteracuda_nifs:destroy_buffer(Buf_C),
+    pteracuda_nifs:destroy_context(Ctx).
+
+
+% %y = α op ( A ) x + β y
 gemv_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
     A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
@@ -275,4 +310,24 @@ gemv_test()->
     ok = pteracuda_nifs:destroy_buffer(Buf_Y),
     pteracuda_nifs:destroy_context(Ctx).
 
+negative_gemv_wrong_A_dim_test()->
+    {ok, Ctx} = pteracuda_nifs:new_context(),
+    A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
+    _m = 5, %rows A  WRONG!!! must be 2
+    _n = 4, %columns A
+    _alpha = 1.0,
+    _beta = 0.0,
+    X = [2.0,5.0,1.0,7.0],
+    Y = [0.0, 0.0], 
+    {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
+    {ok, Buf_X} = pteracuda_nifs:new_float_buffer(),
+    pteracuda_nifs:write_buffer(Buf_X, X),
+    {ok, Buf_Y} = pteracuda_nifs:new_float_buffer(),
+    pteracuda_nifs:write_buffer(Buf_Y, Y),
+    {error, _} = pteracuda_nifs:gemv(Ctx, _m, _n, _alpha, Buf_A, Buf_X, _beta, Buf_Y),
+    {ok, _} = pteracuda_nifs:read_buffer(Buf_Y),
+    ok = pteracuda_nifs:destroy_buffer(Buf_A),
+    ok = pteracuda_nifs:destroy_buffer(Buf_X),
+    ok = pteracuda_nifs:destroy_buffer(Buf_Y),
+    pteracuda_nifs:destroy_context(Ctx).
     
