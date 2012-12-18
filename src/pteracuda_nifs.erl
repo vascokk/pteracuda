@@ -37,7 +37,7 @@
          new_matrix_int_buffer/2,
          new_matrix_float_buffer/2]).
 
--export([mmul/7, gemv/8]).
+-export([mmul/7, gemv/8, saxpy/4]).
 
 new_context() ->
     ?MISSING_NIF.
@@ -109,6 +109,9 @@ mmul(_Ctx, _A, _B, _C, _m, _k, _n) ->
     ?MISSING_NIF.
 
 gemv(_Ctx, _m, _n, _alpha, _A, _X, _beta, _Y) ->
+    ?MISSING_NIF.
+
+saxpy(_Ctx, _a, _X, _Y) ->
     ?MISSING_NIF.
 
 init() ->

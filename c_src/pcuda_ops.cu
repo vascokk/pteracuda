@@ -211,3 +211,32 @@ void pcuda_gemv(const int m, const int n, const double alpha, std::vector<double
     // Destroy the handle
     cublasDestroy(handle);
 }
+
+struct saxpy_functor
+{
+    const float a;
+
+    saxpy_functor(float _a) : a(_a) {}
+
+    __host__ __device__
+        float operator()(const float& x, const float& y) const { 
+            return a * x + y;
+        }
+};
+
+//SAXPY:  y <- a * x + y
+void pcuda_saxpy(double a, std::vector<double> *x, std::vector<double> *y)
+{
+    
+    const float _a = (float)a;
+    thrust::device_vector<float> d_x;
+    thrust::device_vector<float> d_y;
+
+    std::transform(x->begin(), x->end(), std::back_inserter(d_x), CastToFloat());
+    std::transform(y->begin(), y->end(), std::back_inserter(d_y), CastToFloat());
+
+    thrust::transform(d_x.begin(), d_x.end(), d_y.begin(), d_y.begin(), saxpy_functor(_a));
+
+    thrust::copy(d_y.begin(), d_y.end(), y->begin());
+
+}

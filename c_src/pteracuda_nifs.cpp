@@ -61,6 +61,7 @@ extern "C" {
     
     ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+    ERL_NIF_TERM pteracuda_nifs_saxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
 
     static ErlNifFunc pteracuda_nif_funcs[] = {
@@ -89,7 +90,8 @@ extern "C" {
         {"new_matrix_float_buffer", 2, pteracuda_nifs_new_matrix_float_buffer},
 
         {"mmul", 7, pteracuda_nifs_mmul},
-        {"gemv", 8, pteracuda_nifs_gemv}
+        {"gemv", 8, pteracuda_nifs_gemv},
+        {"saxpy", 4, pteracuda_nifs_saxpy}
 
 
     };
@@ -511,12 +513,38 @@ ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix A dimensions do not match m,n parameters")); 
     }
 
-
     cuCtxSetCurrent(ctxRef->ctx);
     pcuda_gemv(m, n, alpha, ((PCudaMatrixFloatBuffer *)ref_A->buffer)->get_data(), ((PCudaFloatBuffer *)ref_X->buffer)->get_data(), beta, ((PCudaFloatBuffer *)ref_Y->buffer)->get_data());
 
     return ATOM_OK;
 }
+
+ERL_NIF_TERM pteracuda_nifs_saxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    PCudaContextRef *ctxRef;
+    PCudaBufferRef *ref_X, *ref_Y;
+    
+    double a;
+
+    if (argc != 4 || 
+        !enif_get_resource(env, argv[0], pteracuda_context_resource, (void **) &ctxRef) ||
+        !enif_get_double(env, argv[1], &a)||
+        !enif_get_resource(env, argv[2], pteracuda_buffer_resource, (void **) &ref_X)||
+        !enif_get_resource(env, argv[3], pteracuda_buffer_resource, (void **) &ref_Y)) {
+
+        return enif_make_badarg(env);
+    }
+
+    if(((PCudaFloatBuffer *)ref_X->buffer)->get_data()->size() != ((PCudaFloatBuffer *)ref_Y->buffer)->get_data()->size()){
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Size X does not match size Y.")); 
+    }
+
+    cuCtxSetCurrent(ctxRef->ctx);
+    pcuda_saxpy(a, ((PCudaFloatBuffer *)ref_X->buffer)->get_data(), ((PCudaFloatBuffer *)ref_Y->buffer)->get_data());
+
+    return ATOM_OK;
+}
+
+
 
 
 

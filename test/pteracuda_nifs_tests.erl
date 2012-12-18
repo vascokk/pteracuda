@@ -250,7 +250,9 @@ negative_create_float_matrix_with_wrong_dimensions_less_data_test() ->
     %{ok, A} = pteracuda_nifs:read_buffer(Buf),
     ok = pteracuda_nifs:destroy_buffer(Buf).
 
-% %Float matrix operations only supported
+% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+%Float matrix operations only supported
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 mmul_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
     A = [[7,8,15,3],[4,4,6,2],[3,7,99,4]], %row major
@@ -288,7 +290,7 @@ negative_mmul_wrong_A_dim_test()->
     pteracuda_nifs:destroy_context(Ctx).
 
 
-% %y = α op ( A ) x + β y
+%  GEMV: y <- α op ( A ) x + β y
 gemv_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
     A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
@@ -331,3 +333,33 @@ negative_gemv_wrong_A_dim_test()->
     ok = pteracuda_nifs:destroy_buffer(Buf_Y),
     pteracuda_nifs:destroy_context(Ctx).
     
+%SAXPY:  y <- a * x + y
+saxpy_test()->
+    {ok, Ctx} = pteracuda_nifs:new_context(),
+    _a = 2.0, %!!!! this has to be float
+    X = [2.0, 5.0, 1.0, 7.0],
+    Y = [0.0, 0.0, 0.0, 0.0], 
+    {ok, Buf_X} = pteracuda_nifs:new_float_buffer(),
+    ok = pteracuda_nifs:write_buffer(Buf_X, X),
+    {ok, Buf_Y} = pteracuda_nifs:new_float_buffer(),
+    ok = pteracuda_nifs:write_buffer(Buf_Y, Y),
+    ok = pteracuda_nifs:saxpy(Ctx, _a, Buf_X, Buf_Y),
+    {ok, [4.0, 10.0, 2.0, 14.0]} = pteracuda_nifs:read_buffer(Buf_Y),
+    ok = pteracuda_nifs:destroy_buffer(Buf_X),
+    ok = pteracuda_nifs:destroy_buffer(Buf_Y),
+    pteracuda_nifs:destroy_context(Ctx).
+
+negative_saxpy_sizeX_lt_sizeY_test()->
+    {ok, Ctx} = pteracuda_nifs:new_context(),
+    _a = 2.0, %!!!! this has to be float
+    X = [2.0, 5.0, 1.0],
+    Y = [0.0, 0.0, 0.0, 0.0], 
+    {ok, Buf_X} = pteracuda_nifs:new_float_buffer(),
+    ok = pteracuda_nifs:write_buffer(Buf_X, X),
+    {ok, Buf_Y} = pteracuda_nifs:new_float_buffer(),
+    ok = pteracuda_nifs:write_buffer(Buf_Y, Y),
+    {error, _} = pteracuda_nifs:saxpy(Ctx, _a, Buf_X, Buf_Y),
+    {ok, _} = pteracuda_nifs:read_buffer(Buf_Y),
+    ok = pteracuda_nifs:destroy_buffer(Buf_X),
+    ok = pteracuda_nifs:destroy_buffer(Buf_Y),
+    pteracuda_nifs:destroy_context(Ctx).
