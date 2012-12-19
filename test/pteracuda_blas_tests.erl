@@ -45,7 +45,7 @@ mmul() ->
     Fun = fun(M1,M2)-> mmul_cpu(M1,[],transpose(M2)) end,
     {Time1, _} = timer:tc(Fun,[M1,M2]),
     %?debugMsg(io_lib:format("~n M result:~p",[ResM])),
-    ?debugMsg(io_lib:format("~n Execution time Erlang:~p",[Time1])),
+    ?debugMsg(io_lib:format("~n Execution time Erlang(CPU):~p",[Time1])),
 
     %% GPU CUBLAS test
     {ok, Ctx} = pteracuda_nifs:new_context(),
@@ -53,7 +53,7 @@ mmul() ->
     {ok, Buf_M2} =  pteracuda_nifs:new_matrix_float_buffer(M2),
     {ok, Buf_C} = pteracuda_nifs:new_matrix_float_buffer(_m,_n),
     {Time2, _} = timer:tc(pteracuda_nifs, mmul, [Ctx, Buf_M1, Buf_M2, Buf_C, _m, _k, _n]),
-    ?debugMsg(io_lib:format("~n Execution time CUDA:~p",[Time2])),
+    ?debugMsg(io_lib:format("~n Execution time CUDA(GPU):~p",[Time2])),
     
     ok = pteracuda_nifs:destroy_buffer(Buf_M1),
     ok = pteracuda_nifs:destroy_buffer(Buf_M2),

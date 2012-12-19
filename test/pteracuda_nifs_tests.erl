@@ -253,10 +253,9 @@ negative_create_float_matrix_with_wrong_dimensions_less_data_test() ->
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 %Float matrix operations only supported
 %
-% For the input parameters to BlLAS operations
-% only matrix float buffers have to be used,
-% since PCudaFloatBuffer supports only <double>
-%(BLAS operations sipport <float> only)
+% For BLAS operations only matrix float buffers can be used
+% as input parameters, since PCudaFloatBuffer supports only <double>
+%(BLAS operations sipport <float> only for now)
 %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 mmul_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
