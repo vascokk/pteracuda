@@ -152,7 +152,7 @@ struct CastToFloat
 
 // Multiply the arrays A and B on GPU and save the result in C
 // C(m,n) = A(m,k) * B(k,n)
-void pcuda_mmul(std::vector<double> *a, std::vector<double> *b, std::vector<double> *c,  const int m, const int k, const int n){
+void pcuda_mmul(std::vector<float> *a, std::vector<float> *b, std::vector<float> *c,  const int m, const int k, const int n){
     int lda=m,ldb=k,ldc=m;
     const float alf = 1;
     const float bet = 0;
@@ -160,13 +160,9 @@ void pcuda_mmul(std::vector<double> *a, std::vector<double> *b, std::vector<doub
     const float *beta = &bet;
 
     //Fallback to float to support cuda architecture < 1.3  
-    thrust::device_vector<float> d_a;
-    thrust::device_vector<float> d_b;
-    thrust::device_vector<float> d_c;
-
-    std::transform(a->begin(), a->end(), std::back_inserter(d_a), CastToFloat());
-    std::transform(b->begin(), b->end(), std::back_inserter(d_b), CastToFloat());
-    std::transform(c->begin(), c->end(), std::back_inserter(d_c), CastToFloat());
+    thrust::device_vector<float> d_a = *a;
+    thrust::device_vector<float> d_b = *b;
+    thrust::device_vector<float> d_c = *c;
 
     // Create a handle for CUBLAS
     cublasHandle_t handle;
@@ -181,30 +177,21 @@ void pcuda_mmul(std::vector<double> *a, std::vector<double> *b, std::vector<doub
     cublasDestroy(handle);
 }
 
-void pcuda_gemv(const int m, const int n, const double alpha, std::vector<double> *a, std::vector<double> *x,const double beta, std::vector<double> *y){
+void pcuda_gemv(const int m, const int n, const float alpha, std::vector<float> *a, std::vector<float> *x,const float beta, std::vector<float> *y){
     int lda=m;
-    const float alf = (float)alpha;
-    const float bet = (float)beta;
-    const float *_alpha = &alf;
-    const float *_beta =  &bet;
     int incx=1, incy=1;
 
     //Fallback to float to support cuda architecture < 1.3  
-    thrust::device_vector<float> d_a;
-    thrust::device_vector<float> d_x;
-    thrust::device_vector<float> d_y;
-
-    std::transform(a->begin(), a->end(), std::back_inserter(d_a), CastToFloat());
-    std::transform(x->begin(), x->end(), std::back_inserter(d_x), CastToFloat());
-    std::transform(y->begin(), y->end(), std::back_inserter(d_y), CastToFloat());
+    thrust::device_vector<float> d_a = *a;
+    thrust::device_vector<float> d_x = *x;
+    thrust::device_vector<float> d_y = *y;
  
     // Create a handle for CUBLAS
     cublasHandle_t handle;
     cublasCreate(&handle);
 
     // Do the actual multiplication
-    cublasStatus_t res = cublasSgemv(handle, CUBLAS_OP_N, m, n, _alpha, thrust::raw_pointer_cast(&d_a[0]), lda, thrust::raw_pointer_cast(&d_x[0]), incx, _beta, thrust::raw_pointer_cast(&d_y[0]), incy);
-    //std::cout << "\ncublasSgemv Status = " << res << std::endl;
+    cublasStatus_t res = cublasSgemv(handle, CUBLAS_OP_N, m, n, &alpha, thrust::raw_pointer_cast(&d_a[0]), lda, thrust::raw_pointer_cast(&d_x[0]), incx, &beta, thrust::raw_pointer_cast(&d_y[0]), incy);
 
     thrust::copy(d_y.begin(), d_y.end(), y->begin());
 
@@ -225,17 +212,13 @@ struct saxpy_functor
 };
 
 //SAXPY:  y <- a * x + y
-void pcuda_saxpy(double a, std::vector<double> *x, std::vector<double> *y)
+void pcuda_saxpy(float a, std::vector<float> *x, std::vector<float> *y)
 {
     
-    const float _a = (float)a;
-    thrust::device_vector<float> d_x;
-    thrust::device_vector<float> d_y;
+    thrust::device_vector<float> d_x = *x;
+    thrust::device_vector<float> d_y = *y;
 
-    std::transform(x->begin(), x->end(), std::back_inserter(d_x), CastToFloat());
-    std::transform(y->begin(), y->end(), std::back_inserter(d_y), CastToFloat());
-
-    thrust::transform(d_x.begin(), d_x.end(), d_y.begin(), d_y.begin(), saxpy_functor(_a));
+    thrust::transform(d_x.begin(), d_x.end(), d_y.begin(), d_y.begin(), saxpy_functor(a));
 
     thrust::copy(d_y.begin(), d_y.end(), y->begin());
 

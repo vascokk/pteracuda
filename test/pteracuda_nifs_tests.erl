@@ -252,6 +252,11 @@ negative_create_float_matrix_with_wrong_dimensions_less_data_test() ->
 
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 %Float matrix operations only supported
+%
+% For the input parameters to BlLAS operations
+% only matrix float buffers have to be used,
+% since PCudaFloatBuffer supports only <double>
+%(BLAS operations sipport <float> only)
 %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 mmul_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
@@ -298,13 +303,13 @@ gemv_test()->
     _n = 4, %columns A
     _alpha = 1.0,
     _beta = 0.0,
-    X = [2.0,5.0,1.0,7.0],
-    Y = [0.0, 0.0], 
+    X = [[2.0,5.0,1.0,7.0]],
+    Y = [[0.0, 0.0]], 
     {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
-    {ok, Buf_X} = pteracuda_nifs:new_float_buffer(),
-    pteracuda_nifs:write_buffer(Buf_X, X),
-    {ok, Buf_Y} = pteracuda_nifs:new_float_buffer(),
-    pteracuda_nifs:write_buffer(Buf_Y, Y),
+    {ok, Buf_X} = pteracuda_nifs:new_matrix_float_buffer(X),
+    %pteracuda_nifs:write_buffer(Buf_X, X),
+    {ok, Buf_Y} = pteracuda_nifs:new_matrix_float_buffer(Y),
+    %pteracuda_nifs:write_buffer(Buf_Y, Y),
     ok = pteracuda_nifs:gemv(Ctx, _m, _n, _alpha, Buf_A, Buf_X, _beta, Buf_Y),
     {ok, [60.0,75.0]} = pteracuda_nifs:read_buffer(Buf_Y),
     ok = pteracuda_nifs:destroy_buffer(Buf_A),
@@ -319,13 +324,12 @@ negative_gemv_wrong_A_dim_test()->
     _n = 4, %columns A
     _alpha = 1.0,
     _beta = 0.0,
-    X = [2.0,5.0,1.0,7.0],
-    Y = [0.0, 0.0], 
-    {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
-    {ok, Buf_X} = pteracuda_nifs:new_float_buffer(),
-    pteracuda_nifs:write_buffer(Buf_X, X),
-    {ok, Buf_Y} = pteracuda_nifs:new_float_buffer(),
-    pteracuda_nifs:write_buffer(Buf_Y, Y),
+    X = [[2.0,5.0,1.0,7.0]],
+    Y = [[0.0, 0.0]], 
+        {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
+    {ok, Buf_X} = pteracuda_nifs:new_matrix_float_buffer(X),
+    %pteracuda_nifs:write_buffer(Buf_X, X),
+    {ok, Buf_Y} = pteracuda_nifs:new_matrix_float_buffer(Y),
     {error, _} = pteracuda_nifs:gemv(Ctx, _m, _n, _alpha, Buf_A, Buf_X, _beta, Buf_Y),
     {ok, _} = pteracuda_nifs:read_buffer(Buf_Y),
     ok = pteracuda_nifs:destroy_buffer(Buf_A),
@@ -337,12 +341,12 @@ negative_gemv_wrong_A_dim_test()->
 saxpy_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
     _a = 2.0, %!!!! this has to be float
-    X = [2.0, 5.0, 1.0, 7.0],
-    Y = [0.0, 0.0, 0.0, 0.0], 
-    {ok, Buf_X} = pteracuda_nifs:new_float_buffer(),
-    ok = pteracuda_nifs:write_buffer(Buf_X, X),
-    {ok, Buf_Y} = pteracuda_nifs:new_float_buffer(),
-    ok = pteracuda_nifs:write_buffer(Buf_Y, Y),
+    X = [[2.0, 5.0, 1.0, 7.0]],
+    Y = [[0.0, 0.0, 0.0, 0.0]], 
+    {ok, Buf_X} = pteracuda_nifs:new_matrix_float_buffer(X),
+    %ok = pteracuda_nifs:write_buffer(Buf_X, X),
+    {ok, Buf_Y} = pteracuda_nifs:new_matrix_float_buffer(Y),
+    %ok = pteracuda_nifs:write_buffer(Buf_Y, Y),
     ok = pteracuda_nifs:saxpy(Ctx, _a, Buf_X, Buf_Y),
     {ok, [4.0, 10.0, 2.0, 14.0]} = pteracuda_nifs:read_buffer(Buf_Y),
     ok = pteracuda_nifs:destroy_buffer(Buf_X),
@@ -352,12 +356,12 @@ saxpy_test()->
 negative_saxpy_sizeX_lt_sizeY_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
     _a = 2.0, %!!!! this has to be float
-    X = [2.0, 5.0, 1.0],
-    Y = [0.0, 0.0, 0.0, 0.0], 
-    {ok, Buf_X} = pteracuda_nifs:new_float_buffer(),
-    ok = pteracuda_nifs:write_buffer(Buf_X, X),
-    {ok, Buf_Y} = pteracuda_nifs:new_float_buffer(),
-    ok = pteracuda_nifs:write_buffer(Buf_Y, Y),
+    X = [[2.0, 5.0, 1.0]],
+    Y = [[0.0, 0.0, 0.0, 0.0]], 
+    {ok, Buf_X} = pteracuda_nifs:new_matrix_float_buffer(X),
+    %ok = pteracuda_nifs:write_buffer(Buf_X, X),
+    {ok, Buf_Y} = pteracuda_nifs:new_matrix_float_buffer(Y),
+    %ok = pteracuda_nifs:write_buffer(Buf_Y, Y),
     {error, _} = pteracuda_nifs:saxpy(Ctx, _a, Buf_X, Buf_Y),
     {ok, _} = pteracuda_nifs:read_buffer(Buf_Y),
     ok = pteracuda_nifs:destroy_buffer(Buf_X),

@@ -514,13 +514,14 @@ ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
     }
 
     cuCtxSetCurrent(ctxRef->ctx);
-    pcuda_gemv(m, n, alpha, ((PCudaMatrixFloatBuffer *)ref_A->buffer)->get_data(), ((PCudaFloatBuffer *)ref_X->buffer)->get_data(), beta, ((PCudaFloatBuffer *)ref_Y->buffer)->get_data());
+    pcuda_gemv(m, n, (float)alpha, ((PCudaMatrixFloatBuffer *)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer *)ref_X->buffer)->get_data(), (float)beta, ((PCudaMatrixFloatBuffer *)ref_Y->buffer)->get_data());
 
     return ATOM_OK;
 }
 
 ERL_NIF_TERM pteracuda_nifs_saxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     PCudaContextRef *ctxRef;
+
     PCudaBufferRef *ref_X, *ref_Y;
     
     double a;
@@ -534,12 +535,12 @@ ERL_NIF_TERM pteracuda_nifs_saxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM a
         return enif_make_badarg(env);
     }
 
-    if(((PCudaFloatBuffer *)ref_X->buffer)->get_data()->size() != ((PCudaFloatBuffer *)ref_Y->buffer)->get_data()->size()){
+    if(((PCudaMatrixFloatBuffer *)ref_X->buffer)->get_data()->size() != ((PCudaMatrixFloatBuffer *)ref_Y->buffer)->get_data()->size()){
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Size X does not match size Y.")); 
     }
 
     cuCtxSetCurrent(ctxRef->ctx);
-    pcuda_saxpy(a, ((PCudaFloatBuffer *)ref_X->buffer)->get_data(), ((PCudaFloatBuffer *)ref_Y->buffer)->get_data());
+    pcuda_saxpy((float)a, ((PCudaMatrixFloatBuffer *)ref_X->buffer)->get_data(), ((PCudaMatrixFloatBuffer *)ref_Y->buffer)->get_data());
 
     return ATOM_OK;
 }

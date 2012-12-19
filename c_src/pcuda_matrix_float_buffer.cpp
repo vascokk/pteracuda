@@ -15,14 +15,14 @@
 #define IDX2CCM(idx,R) (idx/R) //index to col for CM matrix
 
 PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer() {
-    this->data = new std::vector<double>();
+    this->data = new std::vector<float>();
     this->_rows = 1;
 }
 
 PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer(unsigned  rows, unsigned  cols) {
     this->_rows = rows;
     this->_cols = cols;
-    this->data = new std::vector<double>(rows*cols);
+    this->data = new std::vector<float>(rows*cols);
 }
 
 PCudaMatrixFloatBuffer::~PCudaMatrixFloatBuffer() {
@@ -48,11 +48,11 @@ void PCudaMatrixFloatBuffer::write(ErlNifEnv *env, ERL_NIF_TERM data) {
       while (enif_get_list_cell(env, head_row, &head, &head_row))
         if (enif_get_double(env, head, &value)) {
             //this->data->push_back(value);
-            this->data->at((IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) ) = value;
+            this->data->at((IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) ) = (float)value;
             ++idx;
         }else if (enif_get_long(env, head, &lvalue)) {
             //this->data->push_back((double)lvalue);
-            this->data->at(IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) = (double)lvalue;
+            this->data->at(IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) = (float)lvalue;
             ++idx;
         }
     
@@ -64,7 +64,7 @@ void PCudaMatrixFloatBuffer::write(ErlNifEnv *env, ERL_NIF_TERM data) {
 
 //converts column major vector to Erlang row major "list-of-lists"
 ERL_NIF_TERM PCudaMatrixFloatBuffer::toErlTerms(ErlNifEnv *env) {
-    std::vector<double>::iterator iter;
+    std::vector<float>::iterator iter;
     ERL_NIF_TERM retval = enif_make_list(env, 0);
     ERL_NIF_TERM row;
 
@@ -82,7 +82,7 @@ ERL_NIF_TERM PCudaMatrixFloatBuffer::toErlTerms(ErlNifEnv *env) {
         for (iter = this->data->end(); iter != this->data->begin(); ) {
                 --iter;
                 Ridx = IDX2RCM(idx,R);
-                rows[Ridx] = enif_make_list_cell(env, enif_make_double(env, *iter), rows[Ridx]);
+                rows[Ridx] = enif_make_list_cell(env, enif_make_double(env, (double)*iter), rows[Ridx]);
                 ++idx;
         };
         for(int i=0; i<this->_rows; i++){
@@ -92,7 +92,7 @@ ERL_NIF_TERM PCudaMatrixFloatBuffer::toErlTerms(ErlNifEnv *env) {
         if (this->data->size() > 0) {
             for (iter = this->data->end(); iter != this->data->begin();) {
                 --iter;
-                retval = enif_make_list_cell(env, enif_make_double(env, *iter), retval);
+                retval = enif_make_list_cell(env, enif_make_double(env, (double)*iter), retval);
             }
         }        
     }

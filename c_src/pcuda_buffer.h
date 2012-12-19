@@ -152,9 +152,9 @@ public:
     virtual void write(ErlNifEnv *env, ERL_NIF_TERM data);
     virtual void clear();
     
-    std::vector<double>* get_data(){return data;};
+    std::vector<float>* get_data(){return data;};
 protected:
-    std::vector<double> *data;
+    std::vector<float> *data;
 };
 
 #endif

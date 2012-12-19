@@ -2,7 +2,7 @@
 
 -include("pteracuda_internals.hrl").
 
--export([new/1,
+-export([new/1, new/2, new/3,
          destroy/1,
          size/1,
          write/2,
@@ -24,6 +24,14 @@ new(string) ->
     {ok, Buf} = pteracuda_nifs:new_string_buffer(),
     {ok, #pc_buffer{type=string, ref=Buf}}.
 
+new(matrix_float, Rows, Cols) ->
+    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(Rows,Cols),
+    {ok, #pc_buffer{type=matrix_float, ref=Buf}}.
+
+new(matrix_float, A) ->
+    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(A),
+    {ok, #pc_buffer{type=matrix_float, ref=Buf}}.
+
 destroy(#pc_buffer{ref=Ref}) ->
     pteracuda_nifs:destroy_buffer(Ref),
     ok.
@@ -33,7 +41,8 @@ size(#pc_buffer{ref=Ref}) ->
 
 write(#pc_buffer{ref=Ref, type=Type}, Data) when Type =:= integer orelse
                                                  Type =:= string orelse
-                                                 Type =:= float ->
+                                                 Type =:= float orelse
+                                                 Type =:= matrix_float ->
     pteracuda_nifs:write_buffer(Ref, Data).
 
 read(#pc_buffer{ref=Ref}) ->
