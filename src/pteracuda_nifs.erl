@@ -122,15 +122,15 @@ new_matrix_int_buffer(_m, _n) ->
 new_matrix_float_buffer(_m, _n) ->
     ?MISSING_NIF.    
 
--spec gemm(term(), transpose_op(), transpose_op(), integer(), integer(), integer(), float(), list(), list(), float(), list()) -> ok.
+-spec gemm(term(), transpose_op(), transpose_op(), matrix_rows(), matrix_columns(), matrix_rows(), float(), float_matrix(), float_matrix(), float(), float_matrix()) -> ok.
 gemm(_Ctx, _transpose_op_A, _transpose_op_B, _m, _n, _k, _alpha, _A, _B, _beta, _C ) ->
     ?MISSING_NIF.
 
--spec gemv(term(), transpose_op(), integer(), integer(), float(), list(), list(), float(), list()) -> ok.
+-spec gemv(term(), transpose_op(), matrix_rows(), matrix_columns(), float(), float_matrix(), float_vector(), float(), float_vector()) -> ok.
 gemv(_Ctx, _transpose, _m, _n, _alpha, _A, _X, _beta, _Y) ->
     ?MISSING_NIF.
 
--spec saxpy(term(), float(), list(), list()) -> ok.
+-spec saxpy(term(), float(), float_vector(), float_vector()) -> ok.
 saxpy(_Ctx, _a, _X, _Y) ->
     ?MISSING_NIF.
 
