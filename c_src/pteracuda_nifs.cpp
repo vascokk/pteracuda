@@ -59,7 +59,7 @@ extern "C" {
     ERL_NIF_TERM pteracuda_nifs_new_matrix_int_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_new_matrix_float_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     
-    ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+    ERL_NIF_TERM pteracuda_nifs_gemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_saxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
@@ -89,8 +89,8 @@ extern "C" {
         {"new_matrix_int_buffer", 2, pteracuda_nifs_new_matrix_int_buffer},
         {"new_matrix_float_buffer", 2, pteracuda_nifs_new_matrix_float_buffer},
 
-        {"mmul", 7, pteracuda_nifs_mmul},
-        {"gemv", 8, pteracuda_nifs_gemv},
+        {"gemm", 11, pteracuda_nifs_gemm},
+        {"gemv", 9, pteracuda_nifs_gemv},
         {"saxpy", 4, pteracuda_nifs_saxpy}
 
 
@@ -454,17 +454,26 @@ ERL_NIF_TERM pteracuda_nifs_new_matrix_float_buffer(ErlNifEnv *env, int argc, co
 
 ///////////////////Matrix operations
 // C(m,n) = A(m,k) * B(k,n)
-ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+//gemm(_Ctx, _transpose_op_A, _transpose_op_B, _m, _n, _k, _alpha, _A, _B, _beta, _C ) 
+ERL_NIF_TERM pteracuda_nifs_gemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     PCudaContextRef *ctxRef;
     PCudaBufferRef *ref_A, *ref_B, *ref_C;
+    unsigned long transpose_a, transpose_b;
     unsigned long  m, n, k;
-    if (argc != 7 || !enif_get_resource(env, argv[0], pteracuda_context_resource, (void **) &ctxRef) ||
-        !enif_get_resource(env, argv[1], pteracuda_buffer_resource, (void **) &ref_A) ||
-        !enif_get_resource(env, argv[2], pteracuda_buffer_resource, (void **) &ref_B)||
-        !enif_get_resource(env, argv[3], pteracuda_buffer_resource, (void **) &ref_C)||
-        !enif_get_ulong(env, argv[4], &m)||
+    double alpha, beta;
+    
+    if (argc != 11 || !enif_get_resource(env, argv[0], pteracuda_context_resource, (void **) &ctxRef) ||
+        !enif_get_ulong(env, argv[1], &transpose_a)||
+        !enif_get_ulong(env, argv[2], &transpose_b)||
+        !enif_get_ulong(env, argv[3], &m)||
+        !enif_get_ulong(env, argv[4], &n)||
         !enif_get_ulong(env, argv[5], &k)||
-        !enif_get_ulong(env, argv[6], &n)) {
+        !enif_get_double(env, argv[6], &alpha)||
+        !enif_get_resource(env, argv[7], pteracuda_buffer_resource, (void **) &ref_A) ||
+        !enif_get_resource(env, argv[8], pteracuda_buffer_resource, (void **) &ref_B)||
+        !enif_get_double(env, argv[9], &beta)||
+        !enif_get_resource(env, argv[10], pteracuda_buffer_resource, (void **) &ref_C)
+        ) {
         return enif_make_badarg(env);
     }
 
@@ -483,7 +492,9 @@ ERL_NIF_TERM pteracuda_nifs_mmul(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
     }
 
     cuCtxSetCurrent(ctxRef->ctx);
-    pcuda_mmul(((PCudaMatrixFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_B->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_C->buffer)->get_data(), m, k, n);
+    //pcuda_mmul(((PCudaMatrixFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_B->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_C->buffer)->get_data(), m, k, n);
+    pcuda_gemm(transpose_a, transpose_b, m, n, k, alpha, ((PCudaMatrixFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_B->buffer)->get_data(), beta, ((PCudaMatrixFloatBuffer*)ref_C->buffer)->get_data());
+    
     return ATOM_OK;
 }
 
@@ -492,19 +503,20 @@ ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
     PCudaContextRef *ctxRef;
    PCudaBufferRef *ref_A, *ref_X, *ref_Y;
     
-
+    unsigned long transpose;
     unsigned long  m, n;
     double alpha, beta;
 
-    if (argc != 8 || 
+    if (argc != 9 || 
         !enif_get_resource(env, argv[0], pteracuda_context_resource, (void **) &ctxRef) ||
-        !enif_get_ulong(env, argv[1], &m)||
-        !enif_get_ulong(env, argv[2], &n)||
-        !enif_get_double(env, argv[3], &alpha)||
-        !enif_get_resource(env, argv[4], pteracuda_buffer_resource, (void **) &ref_A) ||
-        !enif_get_resource(env, argv[5], pteracuda_buffer_resource, (void **) &ref_X)||
-        !enif_get_double(env, argv[6], &beta)||
-        !enif_get_resource(env, argv[7], pteracuda_buffer_resource, (void **) &ref_Y)) {
+        !enif_get_ulong(env, argv[1], &transpose)||
+        !enif_get_ulong(env, argv[2], &m)||
+        !enif_get_ulong(env, argv[3], &n)||
+        !enif_get_double(env, argv[4], &alpha)||
+        !enif_get_resource(env, argv[5], pteracuda_buffer_resource, (void **) &ref_A) ||
+        !enif_get_resource(env, argv[6], pteracuda_buffer_resource, (void **) &ref_X)||
+        !enif_get_double(env, argv[7], &beta)||
+        !enif_get_resource(env, argv[8], pteracuda_buffer_resource, (void **) &ref_Y)) {
 
         return enif_make_badarg(env);
     }
@@ -514,7 +526,7 @@ ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
     }
 
     cuCtxSetCurrent(ctxRef->ctx);
-    pcuda_gemv(m, n, (float)alpha, ((PCudaMatrixFloatBuffer *)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer *)ref_X->buffer)->get_data(), (float)beta, ((PCudaMatrixFloatBuffer *)ref_Y->buffer)->get_data());
+    pcuda_gemv(transpose, m, n, alpha, ((PCudaMatrixFloatBuffer *)ref_A->buffer)->get_data(), ((PCudaFloatBuffer *)ref_X->buffer)->get_data(), beta, ((PCudaFloatBuffer *)ref_Y->buffer)->get_data());
 
     return ATOM_OK;
 }
@@ -535,12 +547,12 @@ ERL_NIF_TERM pteracuda_nifs_saxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM a
         return enif_make_badarg(env);
     }
 
-    if(((PCudaMatrixFloatBuffer *)ref_X->buffer)->get_data()->size() != ((PCudaMatrixFloatBuffer *)ref_Y->buffer)->get_data()->size()){
+    if(((PCudaFloatBuffer *)ref_X->buffer)->get_data()->size() != ((PCudaFloatBuffer *)ref_Y->buffer)->get_data()->size()){
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Size X does not match size Y.")); 
     }
 
     cuCtxSetCurrent(ctxRef->ctx);
-    pcuda_saxpy((float)a, ((PCudaMatrixFloatBuffer *)ref_X->buffer)->get_data(), ((PCudaMatrixFloatBuffer *)ref_Y->buffer)->get_data());
+    pcuda_saxpy(a, ((PCudaFloatBuffer *)ref_X->buffer)->get_data(), ((PCudaFloatBuffer *)ref_Y->buffer)->get_data());
 
     return ATOM_OK;
 }

@@ -1,9 +1,11 @@
 -module(pteracuda_nifs).
 
--define(NIF_API_VERSION, 1).
+-include("pteracuda_internals.hrl").
+-define(NIF_API_VERSION, 2).
 -define(MISSING_NIF, throw({error, missing_nif})).
 
 -include_lib("eunit/include/eunit.hrl").
+
 
 -on_load(init/0).
 
@@ -37,7 +39,15 @@
          new_matrix_int_buffer/2,
          new_matrix_float_buffer/2]).
 
--export([mmul/7, gemv/8, saxpy/4]).
+-export([new_vector_int_buffer/1,
+         new_vector_float_buffer/1,
+         new_vector_int_buffer/0,
+         new_vector_float_buffer/0]).
+
+-export([gemm/11, gemv/9, saxpy/4]).
+
+-type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
+
 
 new_context() ->
     ?MISSING_NIF.
@@ -93,6 +103,22 @@ buffer_intersection(_Ctx, _First, _Second) ->
 buffer_minmax(_Ctx, _Buffer) ->
     ?MISSING_NIF.
 
+%% Vectors
+new_vector_int_buffer(_A) ->
+    ?MISSING_NIF.
+
+new_vector_float_buffer(_A) ->
+    ?MISSING_NIF.   
+
+new_vector_int_buffer() ->
+    ?MISSING_NIF.
+
+new_vector_float_buffer() ->
+    ?MISSING_NIF.    
+
+
+
+%% Matrices
 new_matrix_int_buffer(_A) ->
     ?MISSING_NIF.
 
@@ -105,12 +131,14 @@ new_matrix_int_buffer(_m, _n) ->
 new_matrix_float_buffer(_m, _n) ->
     ?MISSING_NIF.    
 
-mmul(_Ctx, _A, _B, _C, _m, _k, _n) ->
+-spec gemm(term(), transpose_op(), transpose_op(), integer(), integer(), integer(), float(), list(), list(), float(), list()) -> ok.
+gemm(_Ctx, _transpose_op_A, _transpose_op_B, _m, _n, _k, _alpha, _A, _B, _beta, _C ) ->
     ?MISSING_NIF.
 
-gemv(_Ctx, _m, _n, _alpha, _A, _X, _beta, _Y) ->
+-spec gemv(term(), transpose_op(), integer(), integer(), float(), list(), list(), float(), list()) -> ok.
+gemv(_Ctx, _transpose, _m, _n, _alpha, _A, _X, _beta, _Y) ->
     ?MISSING_NIF.
-
+-spec saxpy(term(), float(), list(), list()) -> ok.
 saxpy(_Ctx, _a, _X, _Y) ->
     ?MISSING_NIF.
 

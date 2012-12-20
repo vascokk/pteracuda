@@ -152,12 +152,25 @@ struct CastToFloat
 
 // Multiply the arrays A and B on GPU and save the result in C
 // C(m,n) = A(m,k) * B(k,n)
-void pcuda_mmul(std::vector<float> *a, std::vector<float> *b, std::vector<float> *c,  const int m, const int k, const int n){
+void pcuda_gemm(const int transpose_a, const int transpose_b, const int m, const int n, const int k, const double alpha, std::vector<double> *a, std::vector<double> *b, const double beta, std::vector<double> *c){
     int lda=m,ldb=k,ldc=m;
-    const float alf = 1;
-    const float bet = 0;
-    const float *alpha = &alf;
-    const float *beta = &bet;
+    const float alf = (float)alpha;
+    const float bet = (float)beta;
+    const float *_alpha = &alf;
+    const float *_beta =  &bet;
+    cublasOperation_t _transpose_a, _transpose_b;
+
+    switch (transpose_a){
+        case 0: _transpose_a = CUBLAS_OP_N;break;
+        case 1: _transpose_a = CUBLAS_OP_T;break;
+        case 2: _transpose_a = CUBLAS_OP_C;break;
+    }
+
+    switch (transpose_b){
+        case 0: _transpose_b = CUBLAS_OP_N;break;
+        case 1: _transpose_b = CUBLAS_OP_T;break;
+        case 2: _transpose_b = CUBLAS_OP_C;break;
+    }
 
     //Fallback to float to support cuda architecture < 1.3  
     thrust::device_vector<float> d_a = *a;
@@ -169,7 +182,7 @@ void pcuda_mmul(std::vector<float> *a, std::vector<float> *b, std::vector<float>
     cublasCreate(&handle);
 
     // Do the actual multiplication
-    cublasStatus_t res = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha, thrust::raw_pointer_cast(&d_a[0]), lda, thrust::raw_pointer_cast(&d_b[0]), ldb, beta, thrust::raw_pointer_cast(&d_c[0]), ldc);
+    cublasStatus_t res = cublasSgemm(handle, _transpose_a, _transpose_b, m, n, k, _alpha, thrust::raw_pointer_cast(&d_a[0]), lda, thrust::raw_pointer_cast(&d_b[0]), ldb, _beta, thrust::raw_pointer_cast(&d_c[0]), ldc);
     //std::cout << "\ncublasSgemm Status = " << res << std::endl;
 
     thrust::copy(d_c.begin(), d_c.end(), c->begin());
@@ -177,9 +190,21 @@ void pcuda_mmul(std::vector<float> *a, std::vector<float> *b, std::vector<float>
     cublasDestroy(handle);
 }
 
-void pcuda_gemv(const int m, const int n, const float alpha, std::vector<float> *a, std::vector<float> *x,const float beta, std::vector<float> *y){
+void pcuda_gemv(const int transpose, const int m, const int n, const double alpha, std::vector<double> *a, std::vector<double> *x, const double beta, std::vector<double> *y){
     int lda=m;
+    const float alf = (float)alpha;
+    const float bet = (float)beta;
+    const float *_alpha = &alf;
+    const float *_beta =  &bet;
     int incx=1, incy=1;
+
+    cublasOperation_t _transpose;
+
+    switch (transpose){
+        case 0: _transpose = CUBLAS_OP_N;break;
+        case 1: _transpose = CUBLAS_OP_T;break;
+        case 2: _transpose = CUBLAS_OP_C;break;
+    }
 
     //Fallback to float to support cuda architecture < 1.3  
     thrust::device_vector<float> d_a = *a;
@@ -191,7 +216,8 @@ void pcuda_gemv(const int m, const int n, const float alpha, std::vector<float> 
     cublasCreate(&handle);
 
     // Do the actual multiplication
-    cublasStatus_t res = cublasSgemv(handle, CUBLAS_OP_N, m, n, &alpha, thrust::raw_pointer_cast(&d_a[0]), lda, thrust::raw_pointer_cast(&d_x[0]), incx, &beta, thrust::raw_pointer_cast(&d_y[0]), incy);
+    cublasStatus_t res = cublasSgemv(handle, _transpose, m, n, _alpha, thrust::raw_pointer_cast(&d_a[0]), lda, thrust::raw_pointer_cast(&d_x[0]), incx, _beta, thrust::raw_pointer_cast(&d_y[0]), incy);
+    //std::cout << "\ncublasSgemv Status = " << res << std::endl;
 
     thrust::copy(d_y.begin(), d_y.end(), y->begin());
 
@@ -212,14 +238,14 @@ struct saxpy_functor
 };
 
 //SAXPY:  y <- a * x + y
-void pcuda_saxpy(float a, std::vector<float> *x, std::vector<float> *y)
+void pcuda_saxpy(double a, std::vector<double> *x, std::vector<double> *y)
 {
     
+    const float _a = (float)a;
     thrust::device_vector<float> d_x = *x;
     thrust::device_vector<float> d_y = *y;
 
-    thrust::transform(d_x.begin(), d_x.end(), d_y.begin(), d_y.begin(), saxpy_functor(a));
+    thrust::transform(d_x.begin(), d_x.end(), d_y.begin(), d_y.begin(), saxpy_functor(_a));
 
     thrust::copy(d_y.begin(), d_y.end(), y->begin());
-
 }

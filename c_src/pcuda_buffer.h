@@ -29,10 +29,7 @@ public:
     virtual bool copy(PCudaBuffer *src) = 0;
     virtual ERL_NIF_TERM intersect(ErlNifEnv *env, PCudaBuffer *other) = 0;
     virtual ERL_NIF_TERM minmax(ErlNifEnv *env) = 0;
-    virtual ERL_NIF_TERM toErlTerms(ErlNifEnv *env) = 0;
-protected:
-    //std::vector *data;
-    
+    virtual ERL_NIF_TERM toErlTerms(ErlNifEnv *env) = 0;    
 };
 
 
@@ -127,7 +124,6 @@ public:
     virtual ERL_NIF_TERM toErlTerms(ErlNifEnv *env);
     virtual void write(ErlNifEnv *env, ERL_NIF_TERM data);
     virtual void clear();
-    //virtual void mmul(PCudaMatrixBuffer *A, PCudaMatrixBuffer *B, const int m, const int k, const int n) { throw "Method mmul() not supported for PCudaMatrixIntBuffer!";};
     std::vector<long>* get_data(){return data;};
 protected:
     std::vector<long> *data;
@@ -152,9 +148,9 @@ public:
     virtual void write(ErlNifEnv *env, ERL_NIF_TERM data);
     virtual void clear();
     
-    std::vector<float>* get_data(){return data;};
+    std::vector<double>* get_data(){return data;};
 protected:
-    std::vector<float> *data;
+    std::vector<double> *data;
 };
 
 #endif

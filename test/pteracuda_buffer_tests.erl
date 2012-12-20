@@ -27,3 +27,4 @@ create_float_matrix_buffer_2_test() ->
     %ok = pteracuda_buffer:write(B, D),
     ok = pteracuda_buffer:destroy(B),
     ok = pteracuda_context:destroy(C).
+

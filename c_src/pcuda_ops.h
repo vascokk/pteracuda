@@ -17,9 +17,8 @@ void pcuda_float_minmax(std::vector<double> *data, double *minmax);
 // Work in progress
 bool pcuda_string_sort(std::vector<std::string> *data);
 
-void pcuda_dgemm(std::vector<float> *a, std::vector<float> *b, std::vector<float> *c,  const int m, const int k, const int n);
-void pcuda_mmul(std::vector<float> *a, std::vector<float> *b, std::vector<float> *c,  const int m, const int k, const int n);
-void pcuda_gemv(const int m, const int n, const float alpha, std::vector<float> *a, std::vector<float> *x,const float beta, std::vector<float> *y);
-void pcuda_saxpy(float a, std::vector<float> *x, std::vector<float> *y);
+void pcuda_gemm(const int transpose_a, const int transpose_b, const int m, const int n, const int k, const double alpha, std::vector<double> *a, std::vector<double> *b, const double beta, std::vector<double> *c);
+void pcuda_gemv(const int transpose, const int m, const int n, const double alpha, std::vector<double> *a, std::vector<double> *x,const double beta, std::vector<double> *y);
+void pcuda_saxpy(double a, std::vector<double> *x, std::vector<double> *y);
 
 #endif
