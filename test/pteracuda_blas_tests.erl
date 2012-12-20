@@ -57,7 +57,6 @@ mmul() ->
     {ok, Buf_M2} =  pteracuda_nifs:new_matrix_float_buffer(M2),
     {ok, Buf_C} = pteracuda_nifs:new_matrix_float_buffer(_m,_n),
 
-    %ok = pteracuda_nifs:gemm(Ctx, ?NO_TRANSPOSE, ?NO_TRANSPOSE, _m, _n, _k, _alpha, Buf_A, Buf_B, _beta, Buf_C),
     {Time2, _} = timer:tc(pteracuda_nifs, gemm, [Ctx, ?NO_TRANSPOSE, ?NO_TRANSPOSE, _m, _n, _k, _alpha, Buf_M1, Buf_M2, _beta, Buf_C]),
     ?debugMsg(io_lib:format("~n Execution time CUDA(GPU):~p",[Time2])),
     
