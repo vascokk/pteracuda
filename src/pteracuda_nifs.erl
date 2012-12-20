@@ -103,21 +103,6 @@ buffer_intersection(_Ctx, _First, _Second) ->
 buffer_minmax(_Ctx, _Buffer) ->
     ?MISSING_NIF.
 
-%% Vectors
-new_vector_int_buffer(_A) ->
-    ?MISSING_NIF.
-
-new_vector_float_buffer(_A) ->
-    ?MISSING_NIF.   
-
-new_vector_int_buffer() ->
-    ?MISSING_NIF.
-
-new_vector_float_buffer() ->
-    ?MISSING_NIF.    
-
-
-
 %% Matrices
 new_matrix_int_buffer(_A) ->
     ?MISSING_NIF.
@@ -138,6 +123,7 @@ gemm(_Ctx, _transpose_op_A, _transpose_op_B, _m, _n, _k, _alpha, _A, _B, _beta, 
 -spec gemv(term(), transpose_op(), integer(), integer(), float(), list(), list(), float(), list()) -> ok.
 gemv(_Ctx, _transpose, _m, _n, _alpha, _A, _X, _beta, _Y) ->
     ?MISSING_NIF.
+
 -spec saxpy(term(), float(), list(), list()) -> ok.
 saxpy(_Ctx, _a, _X, _Y) ->
     ?MISSING_NIF.
