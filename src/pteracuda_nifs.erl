@@ -39,11 +39,6 @@
          new_matrix_int_buffer/2,
          new_matrix_float_buffer/2]).
 
--export([new_vector_int_buffer/1,
-         new_vector_float_buffer/1,
-         new_vector_int_buffer/0,
-         new_vector_float_buffer/0]).
-
 -export([gemm/11, gemv/9, saxpy/4]).
 
 -type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
