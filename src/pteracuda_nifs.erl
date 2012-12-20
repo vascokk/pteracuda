@@ -42,7 +42,12 @@
 -export([gemm/11, gemv/9, saxpy/4]).
 
 -type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
-
+-type int_vector() :: [integer()].
+-type float_vector() :: [float()].
+-type int_matrix() :: [[integer()]].
+-type float_matrix() :: [[float()]].
+-type matrix_rows() :: integer().
+-type matrix_columns() :: integer().
 
 new_context() ->
     ?MISSING_NIF.
@@ -68,9 +73,11 @@ destroy_buffer(_Buffer) ->
 buffer_size(_Buffer) ->
     ?MISSING_NIF.
 
+-spec read_buffer(term()) -> {ok, int_vector() | float_vector() | int_matrix() | float_matrix()}.
 read_buffer(_Buffer) ->
     ?MISSING_NIF.
 
+-spec write_buffer(term(), int_vector() | float_vector() | int_matrix() | float_matrix()) -> ok.
 write_buffer(_Buffer, _Data) ->
     ?MISSING_NIF.
 
@@ -99,15 +106,19 @@ buffer_minmax(_Ctx, _Buffer) ->
     ?MISSING_NIF.
 
 %% Matrices
+-spec new_matrix_int_buffer(int_matrix()) -> {ok, term()}.
 new_matrix_int_buffer(_A) ->
     ?MISSING_NIF.
 
+-spec new_matrix_float_buffer(float_matrix()) -> {ok, term()}.
 new_matrix_float_buffer(_A) ->
     ?MISSING_NIF.   
 
+-spec new_matrix_int_buffer(matrix_rows(), matrix_columns()) -> {ok, term()}.
 new_matrix_int_buffer(_m, _n) ->
     ?MISSING_NIF.
 
+-spec new_matrix_float_buffer(matrix_rows(), matrix_columns()) -> {ok, term()}.
 new_matrix_float_buffer(_m, _n) ->
     ?MISSING_NIF.    
 
