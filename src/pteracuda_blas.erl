@@ -6,7 +6,7 @@
 
 -type transpose_op() :: transpose | no_transpose | conjugate_transpose.
 
-
+-spec gemm(context(), transpose_op(), transpose_op(), matrix_rows(), matrix_columns(), matrix_rows(), float(), float_matrix_buffer(), float_matrix_buffer(), float(), float_matrix_buffer()) -> ok. 
 gemm(#pc_context{ref=Ctx}, Transpose_A, Transpose_B, _m, _n, _k, _alpha, #pc_buffer{ref=Buf_A}, #pc_buffer{ref=Buf_B}, _beta, #pc_buffer{ref=Buf_C}) ->
 	case Transpose_A of 
 		transpose -> _transp_A = ?TRANSPOSE;
@@ -20,6 +20,7 @@ gemm(#pc_context{ref=Ctx}, Transpose_A, Transpose_B, _m, _n, _k, _alpha, #pc_buf
 	end,
 	pteracuda_nifs:gemm(Ctx, _transp_A, _transp_B, _m, _n, _k, _alpha, Buf_A, Buf_B, _beta, Buf_C).
 
+-spec gemv(context(), transpose_op(), matrix_rows(), matrix_columns(), float(), float_matrix_buffer(), float_vector_buffer() , float(), float_vector_buffer() ) -> ok.
 gemv(#pc_context{ref=Ctx}, Transpose_A , _m, _n, _alpha, #pc_buffer{ref=Buf_A}, #pc_buffer{ref=Buf_X}, _beta, #pc_buffer{ref=Buf_Y}) ->
 	case Transpose_A of 
 		transpose -> _transp_A = ?TRANSPOSE;
@@ -28,5 +29,6 @@ gemv(#pc_context{ref=Ctx}, Transpose_A , _m, _n, _alpha, #pc_buffer{ref=Buf_A}, 
 	end,
 	pteracuda_nifs:gemv(Ctx, _transp_A , _m, _n, _alpha, Buf_A, Buf_X, _beta, Buf_Y).
 
+-spec saxpy(context(), float(), float_vector_buffer(), float_vector_buffer() ) -> ok.
 saxpy(#pc_context{ref=Ctx}, _a, #pc_buffer{ref=Buf_X}, #pc_buffer{ref=Buf_Y}) ->
 	pteracuda_nifs:saxpy(Ctx, _a, Buf_X, Buf_Y).

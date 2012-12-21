@@ -14,6 +14,11 @@ transpose(M) ->
   [lists:map(fun hd/1, M) | transpose(lists:map(fun tl/1, M))].
 
 
+transpose_gpu(Ctx, Buf_A, Buf_B) ->
+  ok = pteracuda_nifs:transpose(Ctx, Buf_A, Buf_B),
+  {ok, B} = pteracuda_nifs:read_buffer(Buf_B),
+  B.
+
 func(RowM1,M2)->
   F2 = fun(_RowM1,_RowM2) -> [X*Y || {X,Y}<-lists:zip(_RowM1,_RowM2)] end,
   F1 = fun(_RowM1,_M2) -> [lists:sum(F2(_RowM1,_RowM2)) || _RowM2<-_M2 ] end,
@@ -50,20 +55,30 @@ mmul() ->
     Fun = fun(M1,M2)-> mmul_cpu(M1,[],transpose(M2)) end,
     {Time1, _} = timer:tc(Fun,[M1,M2]),
     %?debugMsg(io_lib:format("~n M result:~p",[ResM])),
-    ?debugMsg(io_lib:format("~n Execution time Erlang(CPU):~p",[Time1])),
+   
 
     %% GPU CUBLAS test
     {ok, Ctx} = pteracuda_nifs:new_context(),
     {ok, Buf_M1} = pteracuda_nifs:new_matrix_float_buffer(M1),
     {ok, Buf_M2} =  pteracuda_nifs:new_matrix_float_buffer(M2),
     {ok, Buf_C} = pteracuda_nifs:new_matrix_float_buffer(_m,_n),
-
     {Time2, _} = timer:tc(pteracuda_nifs, gemm, [Ctx, ?NO_TRANSPOSE, ?NO_TRANSPOSE, _m, _n, _k, _alpha, Buf_M1, Buf_M2, _beta, Buf_C]),
+    
+
+    %% CPU multiplication with GPU transpose
+    {ok, Buf_M2T} = pteracuda_nifs:new_matrix_float_buffer(_n, _k),
+    Fun2 = fun(_M1,_Buf_M2)-> mmul_cpu(_M1,[],transpose_gpu(Ctx, _Buf_M2, Buf_M2T)) end,
+    {Time3, _} = timer:tc(Fun2,[M1,Buf_M2]),
+
+    %%Print results
+    ?debugMsg(io_lib:format("~n Execution time Erlang(CPU):~p",[Time1])),
     ?debugMsg(io_lib:format("~n Execution time CUDA(GPU):~p",[Time2])),
+    ?debugMsg(io_lib:format("~n Execution time Erlang & CUDA transpose:~p",[Time3])),
     
     ok = pteracuda_nifs:destroy_buffer(Buf_M1),
     ok = pteracuda_nifs:destroy_buffer(Buf_M2),
     ok = pteracuda_nifs:destroy_buffer(Buf_C),
+    ok = pteracuda_nifs:destroy_buffer(Buf_M2T),
     pteracuda_nifs:destroy_context(Ctx).
 
 

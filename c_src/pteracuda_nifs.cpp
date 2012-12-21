@@ -62,6 +62,7 @@ extern "C" {
     ERL_NIF_TERM pteracuda_nifs_gemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pteracuda_nifs_saxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+    ERL_NIF_TERM pteracuda_nifs_transpose(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
 
     static ErlNifFunc pteracuda_nif_funcs[] = {
@@ -91,7 +92,8 @@ extern "C" {
 
         {"gemm", 11, pteracuda_nifs_gemm},
         {"gemv", 9, pteracuda_nifs_gemv},
-        {"saxpy", 4, pteracuda_nifs_saxpy}
+        {"saxpy", 4, pteracuda_nifs_saxpy},
+        {"transpose", 3, pteracuda_nifs_transpose}
 
 
     };
@@ -557,7 +559,35 @@ ERL_NIF_TERM pteracuda_nifs_saxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM a
     return ATOM_OK;
 }
 
+ERL_NIF_TERM pteracuda_nifs_transpose(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    PCudaContextRef *ctxRef;
 
+    PCudaBufferRef *ref_A, *ref_B;
+    unsigned long m, n;
+
+    if (argc != 3 || 
+        !enif_get_resource(env, argv[0], pteracuda_context_resource, (void **) &ctxRef) ||
+        !enif_get_resource(env, argv[1], pteracuda_buffer_resource, (void **) &ref_A)||
+        !enif_get_resource(env, argv[2], pteracuda_buffer_resource, (void **) &ref_B)) {
+
+        return enif_make_badarg(env);
+    }
+
+    if(((PCudaMatrixFloatBuffer *)ref_A->buffer)->rows() != ((PCudaMatrixFloatBuffer *)ref_B->buffer)->cols() ||
+        ((PCudaMatrixFloatBuffer *)ref_A->buffer)->cols() != ((PCudaMatrixFloatBuffer *)ref_B->buffer)->rows() ){
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Size A does not match the transpose size B.")); 
+    }
+
+    m = ((PCudaMatrixFloatBuffer *)ref_A->buffer)->rows();
+    n = ((PCudaMatrixFloatBuffer *)ref_A->buffer)->cols();
+    
+    cuCtxSetCurrent(ctxRef->ctx);
+
+    //as the internal representation of a matrix buffer is "column major", the actual Rows x Columns is  N x M
+    pcuda_transpose(n, m, ((PCudaMatrixFloatBuffer *)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer *)ref_B->buffer)->get_data());
+
+    return ATOM_OK;
+}
 
 
 

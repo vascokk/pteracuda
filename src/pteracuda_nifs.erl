@@ -39,7 +39,7 @@
          new_matrix_int_buffer/2,
          new_matrix_float_buffer/2]).
 
--export([gemm/11, gemv/9, saxpy/4]).
+-export([gemm/11, gemv/9, saxpy/4, transpose/3]).
 
 -type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
 
@@ -127,6 +127,10 @@ gemv(_Ctx, _transpose, _m, _n, _alpha, _A, _X, _beta, _Y) ->
 -spec saxpy(term(), float(), float_vector(), float_vector()) -> ok.
 saxpy(_Ctx, _a, _X, _Y) ->
     ?MISSING_NIF.
+
+-spec transpose(term(), float_matrix(), float_matrix()) -> ok.
+transpose(_Ctx, _A, _B) ->
+    ?MISSING_NIF.    
 
 init() ->
     PrivDir = case code:priv_dir(pteracuda) of

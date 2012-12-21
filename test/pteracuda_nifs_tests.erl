@@ -354,3 +354,21 @@ negative_saxpy_sizeX_lt_sizeY_test()->
     ok = pteracuda_nifs:destroy_buffer(Buf_X),
     ok = pteracuda_nifs:destroy_buffer(Buf_Y),
     pteracuda_nifs:destroy_context(Ctx).
+
+
+%% Very slow at the moment!!!!!  Don't use this function!!!
+%Transpose 
+% B <- A'
+transpose_test()->
+    {ok, Ctx} = pteracuda_nifs:new_context(),
+    A = [[7,8,15,3],[4,4,6,2],[3,7,99,4]], %row major
+    A_transposed = [[7.0,4.0,3.0],[8.0,4.0,7.0],[15.0,6.0,99.0],[3.0,2.0,4.0]],
+
+    {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
+    {ok, Buf_B} = pteracuda_nifs:new_matrix_float_buffer(4,3),
+    ok = pteracuda_nifs:transpose(Ctx, Buf_A, Buf_B),
+    {ok, B} = pteracuda_nifs:read_buffer(Buf_B),
+    ?assertEqual(B, A_transposed),
+    ok = pteracuda_nifs:destroy_buffer(Buf_A),
+    ok = pteracuda_nifs:destroy_buffer(Buf_B),
+    pteracuda_nifs:destroy_context(Ctx).

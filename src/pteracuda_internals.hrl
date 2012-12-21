@@ -23,4 +23,8 @@
 -record(pc_context, {ref}).
 
 -type buffer() :: #pc_buffer{}.
+-type float_matrix_buffer() :: #pc_buffer{type::matrix, data_type::float}.
+-type float_vector_buffer() :: #pc_buffer{type::vector, data_type::float}.
+
+-type context() :: #pc_context{}.
 

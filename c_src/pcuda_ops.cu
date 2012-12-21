@@ -17,6 +17,7 @@
 
 #include "pcuda_string.h"
 
+
 PCudaString::PCudaString() {
     this->len = -1;
     this->str = NULL;
@@ -248,4 +249,43 @@ void pcuda_saxpy(double a, std::vector<double> *x, std::vector<double> *y)
     thrust::transform(d_x.begin(), d_x.end(), d_y.begin(), d_y.begin(), saxpy_functor(_a));
 
     thrust::copy(d_y.begin(), d_y.end(), y->begin());
+}
+
+//Transpose:  B<-A'
+
+////source A in row_major layout
+struct transpose_index : public thrust::unary_function<size_t,size_t>
+{
+  size_t m, n;
+
+  __host__ __device__
+  transpose_index(size_t _m, size_t _n) : m(_m), n(_n) {}
+
+  __host__ __device__
+  size_t operator()(size_t linear_index)
+  {
+      size_t i = linear_index / n;
+      size_t j = linear_index % n;
+
+      return m * j + i;
+  }
+};
+
+void pcuda_transpose(const int _m, const int _n, std::vector<double> *a, std::vector<double> *b){
+
+    size_t m = _m; // number of rows
+    size_t n = _n;
+    
+    thrust::device_vector<float> d_a = *a;
+    thrust::device_vector<float> d_b = *b;
+
+    thrust::counting_iterator<size_t> indices(0);
+
+    thrust::gather
+        (thrust::make_transform_iterator(indices, transpose_index(n, m)),
+        thrust::make_transform_iterator(indices, transpose_index(n, m)) + d_b.size(),
+        d_a.begin(),
+        d_b.begin());    
+
+    thrust::copy(d_b.begin(), d_b.end(), b->begin());
 }
