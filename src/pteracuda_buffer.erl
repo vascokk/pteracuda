@@ -2,7 +2,7 @@
 
 -include("pteracuda_internals.hrl").
 
--export([new/1, new/2, new/3, new/4,
+-export([new/1, new/4, new/5,
          destroy/1,
          size/1,
          write/2,
@@ -14,27 +14,34 @@
          intersection/3,
          minmax/2]).
 
+-spec new(data_type) -> {ok, buffer()}.
 new(integer) ->
     {ok, Buf} = pteracuda_nifs:new_int_buffer(),
-    {ok, #pc_buffer{type=integer, ref=Buf}};
+    {ok, #pc_buffer{type = vector, data_type=integer, ref=Buf}};
 new(float) ->
     {ok, Buf} = pteracuda_nifs:new_float_buffer(),
-    {ok, #pc_buffer{type=float, ref=Buf}};
+    {ok, #pc_buffer{type = vector, data_type=float, ref=Buf}};
 new(string) ->
     {ok, Buf} = pteracuda_nifs:new_string_buffer(),
-    {ok, #pc_buffer{type=string, ref=Buf}}.
+    {ok, #pc_buffer{type = vector, data_type=string, ref=Buf}}.
 
-new(matrix_float, Rows, Cols) ->
+-spec new(matrix, data_type(), storage_layout(), matrix_rows(), matrix_columns()) -> {ok, buffer()}.
+new(matrix, float, StorageLayout, Rows, Cols) ->
     {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(Rows,Cols),
-    {ok, #pc_buffer{type=matrix_float, ref=Buf}}.
+    {ok, #pc_buffer{type = matrix, data_type=float, layout=StorageLayout, ref=Buf}};
+new(matrix, integer, StorageLayout, Rows, Cols) ->
+    {ok, Buf} = pteracuda_nifs:new_matrix_int_buffer(Rows,Cols),
+    {ok, #pc_buffer{type = matrix, data_type=integer, layout=StorageLayout, ref=Buf}}.
 
-new(matrix_float, A) ->
-    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(A),
-    {ok, #pc_buffer{type=matrix_float, ref=Buf}}.
 
-new(matrix, float, A, row_major) ->
-    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(A),
-    {ok, #pc_buffer{type=matrix_float, ref=Buf}}.
+-spec new(matrix, float, storage_layout(), float_matrix()) -> {ok, buffer()};
+         (matrix, integer, storage_layout(), int_matrix()) -> {ok, buffer()}.
+new(matrix, float, StorageLayout, Matrix) ->
+    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(Matrix),
+    {ok, #pc_buffer{type = matrix, data_type=float, layout=StorageLayout,  ref=Buf}};    
+new(matrix, integer, StorageLayout, Matrix) ->
+    {ok, Buf} = pteracuda_nifs:new_matrix_int_buffer(Matrix),
+    {ok, #pc_buffer{type = matrix, data_type=integer, layout=StorageLayout, ref=Buf}}.
 
 
 destroy(#pc_buffer{ref=Ref}) ->
@@ -44,16 +51,15 @@ destroy(#pc_buffer{ref=Ref}) ->
 size(#pc_buffer{ref=Ref}) ->
     pteracuda_nifs:buffer_size(Ref).
 
-write(#pc_buffer{ref=Ref, type=Type}, Data) when Type =:= integer orelse
+write(#pc_buffer{ref=Ref, data_type=Type}, Data) when Type =:= integer orelse
                                                  Type =:= string orelse
-                                                 Type =:= float orelse
-                                                 Type =:= matrix_float ->
+                                                 Type =:= float ->
     pteracuda_nifs:write_buffer(Ref, Data).
 
 read(#pc_buffer{ref=Ref}) ->
     pteracuda_nifs:read_buffer(Ref).
 
-duplicate(#pc_buffer{ref=Ref, type=Type}) when Type =:= integer orelse
+duplicate(#pc_buffer{ref=Ref, data_type=Type}) when Type =:= integer orelse
                                                Type =:= string orelse
                                                Type =:= float ->
     {ok, OtherBuf} = new(Type),

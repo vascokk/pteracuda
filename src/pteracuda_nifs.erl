@@ -42,12 +42,6 @@
 -export([gemm/11, gemv/9, saxpy/4]).
 
 -type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
--type int_vector() :: [integer()].
--type float_vector() :: [float()].
--type int_matrix() :: [[integer()]].
--type float_matrix() :: [[float()]].
--type matrix_rows() :: integer().
--type matrix_columns() :: integer().
 
 new_context() ->
     ?MISSING_NIF.

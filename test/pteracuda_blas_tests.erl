@@ -32,6 +32,7 @@ benchmark_test_() ->
                   mmul()
            end}.	
 
+%% Matrix-matrix multiplication benchmark
 mmul() ->
    	_m = 300,
     _k = 300,
@@ -64,3 +65,68 @@ mmul() ->
     ok = pteracuda_nifs:destroy_buffer(Buf_M2),
     ok = pteracuda_nifs:destroy_buffer(Buf_C),
     pteracuda_nifs:destroy_context(Ctx).
+
+
+%%
+%% Erlang BLAS API tests
+%%
+
+% GEMM: C = α op ( A ) op ( B ) + β C
+gemm_test()->
+    {ok, Ctx} = pteracuda_context:new(),
+    A = [[7,8,15,3],[4,4,6,2],[3,7,99,4]], %row major
+    B = [[3,5],[2,7],[44,12],[8,21]], %row major
+    _m = 3,%num_rows_A
+    _k = 4,%num_cols_A
+    _n = 2,%num_cols_B
+    _alpha = 1.0,
+    _beta= 0.0,
+    C = [[721.0, 334.0],[300.0,162.0],[4411.0,1336.0]], %row major
+    {ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major,A),
+    {ok, Buf_B} = pteracuda_buffer:new(matrix, float, row_major,B),
+    {ok, Buf_C} = pteracuda_buffer:new(matrix, float, row_major,_m,_n),
+    ok = pteracuda_blas:gemm(Ctx, no_transpose, no_transpose, _m, _n, _k, _alpha, Buf_A, Buf_B, _beta, Buf_C),
+    {ok, C} = pteracuda_buffer:read(Buf_C),
+    ok = pteracuda_buffer:destroy(Buf_A),
+    ok = pteracuda_buffer:destroy(Buf_B),
+    ok = pteracuda_buffer:destroy(Buf_C),
+    ok = pteracuda_context:destroy(Ctx).
+
+
+%  GEMV: y <- α op ( A ) x + β y
+gemv_test()->
+    {ok, Ctx} = pteracuda_context:new(),
+    A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
+    _m = 2, %rows A
+    _n = 4, %columns A
+    _alpha = 1.0,
+    _beta = 0.0,
+    X = [2.0,5.0,1.0,7.0],
+    Y = [0.0, 0.0], 
+    {ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major, A),
+    {ok, Buf_X} = pteracuda_buffer:new(float),
+    pteracuda_buffer:write(Buf_X, X),
+    {ok, Buf_Y} = pteracuda_buffer:new(float),
+    pteracuda_buffer:write(Buf_Y, Y),
+    ok = pteracuda_blas:gemv(Ctx, no_transpose , _m, _n, _alpha, Buf_A, Buf_X, _beta, Buf_Y),
+    {ok, [60.0,75.0]} = pteracuda_buffer:read(Buf_Y),
+    ok = pteracuda_buffer:destroy(Buf_A),
+    ok = pteracuda_buffer:destroy(Buf_X),
+    ok = pteracuda_buffer:destroy(Buf_Y),
+    ok = pteracuda_context:destroy(Ctx).
+
+%SAXPY:  y <- a * x + y
+saxpy_test()->
+    {ok, Ctx} = pteracuda_context:new(),
+    _a = 2.0, %!!!! this has to be float
+    X = [2.0, 5.0, 1.0, 7.0],
+    Y = [0.0, 0.0, 0.0, 0.0], 
+    {ok, Buf_X} = pteracuda_buffer:new(float),
+    ok = pteracuda_buffer:write(Buf_X, X),
+    {ok, Buf_Y} = pteracuda_buffer:new(float),
+    ok = pteracuda_buffer:write(Buf_Y, Y),
+    ok = pteracuda_blas:saxpy(Ctx, _a, Buf_X, Buf_Y),
+    {ok, [4.0, 10.0, 2.0, 14.0]} = pteracuda_buffer:read(Buf_Y),
+    ok = pteracuda_buffer:destroy(Buf_X),
+    ok = pteracuda_buffer:destroy(Buf_Y),
+    ok = pteracuda_context:destroy(Ctx).
