@@ -48,39 +48,39 @@ mmul() ->
     random:seed(T1, T2, T3),
     Rows = _m,
     Cols = _k,
-    M1 = [[random:uniform(1000) || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)],
-    M2 = [[random:uniform(1000) || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)],
-
+    M1 = [[random:uniform(1000)+0.1 || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)],
+    M2 = [[random:uniform(1000)+0.1 || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)],
+    
     %% CPU test
     Fun = fun(M1,M2)-> mmul_cpu(M1,[],transpose(M2)) end,
     {Time1, _} = timer:tc(Fun,[M1,M2]),
     %?debugMsg(io_lib:format("~n M result:~p",[ResM])),
    
+    {ok, Ctx} = pteracuda_nifs:new_context(),
 
     %% GPU CUBLAS test
-    {ok, Ctx} = pteracuda_nifs:new_context(),
     {ok, Buf_M1} = pteracuda_nifs:new_matrix_float_buffer(M1),
     {ok, Buf_M2} =  pteracuda_nifs:new_matrix_float_buffer(M2),
     {ok, Buf_C} = pteracuda_nifs:new_matrix_float_buffer(_m,_n),
     {Time2, _} = timer:tc(pteracuda_nifs, gemm, [Ctx, ?NO_TRANSPOSE, ?NO_TRANSPOSE, _m, _n, _k, _alpha, Buf_M1, Buf_M2, _beta, Buf_C]),
-    
+
 
     %% CPU multiplication with GPU transpose
     {ok, Buf_M2T} = pteracuda_nifs:new_matrix_float_buffer(_n, _k),
-    Fun2 = fun(_M1,_Buf_M2)-> mmul_cpu(_M1,[],transpose_gpu(Ctx, _Buf_M2, Buf_M2T)) end,
-    {Time3, _} = timer:tc(Fun2,[M1,Buf_M2]),
+    {Time3, _} = timer:tc(Fun,[M1,transpose_gpu(Ctx, Buf_M1, Buf_M2T)]),   
 
-    %%Print results
-    ?debugMsg(io_lib:format("~n Execution time Erlang(CPU):~p",[Time1])),
-    ?debugMsg(io_lib:format("~n Execution time CUDA(GPU):~p",[Time2])),
-    ?debugMsg(io_lib:format("~n Execution time Erlang & CUDA transpose:~p",[Time3])),
-    
     ok = pteracuda_nifs:destroy_buffer(Buf_M1),
     ok = pteracuda_nifs:destroy_buffer(Buf_M2),
     ok = pteracuda_nifs:destroy_buffer(Buf_C),
     ok = pteracuda_nifs:destroy_buffer(Buf_M2T),
-    pteracuda_nifs:destroy_context(Ctx).
 
+    pteracuda_nifs:destroy_context(Ctx),
+    
+    %%Print results
+    ?debugMsg(io_lib:format("~n Execution time Erlang(CPU):~p",[Time1])),
+    ?debugMsg(io_lib:format("~n Execution time CUDA(GPU):~p",[Time2])),
+    ?debugMsg(io_lib:format("~n Execution time Erlang & CUDA transpose:~p",[Time3])).
+    
 
 %%
 %% Erlang BLAS API tests

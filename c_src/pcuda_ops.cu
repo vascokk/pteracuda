@@ -252,8 +252,6 @@ void pcuda_saxpy(double a, std::vector<double> *x, std::vector<double> *y)
 }
 
 //Transpose:  B<-A'
-
-////source A in row_major layout
 struct transpose_index : public thrust::unary_function<size_t,size_t>
 {
   size_t m, n;
@@ -273,7 +271,7 @@ struct transpose_index : public thrust::unary_function<size_t,size_t>
 
 void pcuda_transpose(const int _m, const int _n, std::vector<double> *a, std::vector<double> *b){
 
-    size_t m = _m; // number of rows
+    size_t m = _m; 
     size_t n = _n;
     
     thrust::device_vector<float> d_a = *a;
