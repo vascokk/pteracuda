@@ -146,7 +146,7 @@ saxpy_test()->
     ok = pteracuda_buffer:destroy(Buf_Y),
     ok = pteracuda_context:destroy(Ctx).
 
-
+% GEAM:  C = α op ( A ) + β op ( B )
 geam_test()->
     {ok, Ctx} = pteracuda_context:new(),
     A = [[7,8,15,3],[4,4,6,2],[3,7,99,4]], %row major
@@ -165,6 +165,7 @@ geam_test()->
     ok = pteracuda_buffer:destroy(Buf_B),
     ok = pteracuda_context:destroy(Ctx).    
 
+% B <- α * A
 smm_test()->
     {ok, Ctx} = pteracuda_context:new(),
     A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
