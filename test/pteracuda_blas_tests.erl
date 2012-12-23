@@ -145,3 +145,37 @@ saxpy_test()->
     ok = pteracuda_buffer:destroy(Buf_X),
     ok = pteracuda_buffer:destroy(Buf_Y),
     ok = pteracuda_context:destroy(Ctx).
+
+
+geam_test()->
+    {ok, Ctx} = pteracuda_context:new(),
+    A = [[7,8,15,3],[4,4,6,2],[3,7,99,4]], %row major
+    B = [[1,2,3,4],[5,6,7,8],[9,10,11,12]],
+    _alpha = 1.0,
+    _beta = 1.0,
+    _m = 3,
+    _n = 4,
+    {ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major, A),
+    {ok, Buf_B} = pteracuda_buffer:new(matrix, float, row_major, B),
+    {ok, Buf_C} = pteracuda_buffer:new(matrix, float, row_major, _m, _n),
+    ok = pteracuda_blas:geam(Ctx, no_transpose, no_transpose, _m, _n, _alpha, Buf_A, _beta, Buf_B, Buf_C),
+    {ok, C} = pteracuda_buffer:read(Buf_C),
+    ?assertEqual(C, [[8.0,10.0,18.0,7.0],[9.0,10.0,13.0,10.0],[12.0,17.0,110.0,16.0]]),
+    ok = pteracuda_buffer:destroy(Buf_A),
+    ok = pteracuda_buffer:destroy(Buf_B),
+    ok = pteracuda_context:destroy(Ctx).    
+
+smm_test()->
+    {ok, Ctx} = pteracuda_context:new(),
+    A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
+    _m = 2, %rows A
+    _n = 4, %columns A
+    _alpha = 5.0,
+    {ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major, A),
+    {ok, Buf_B} = pteracuda_buffer:new(matrix, float, row_major, _m, _n),
+    ok = pteracuda_blas:smm(Ctx, _alpha, Buf_A, Buf_B),
+    {ok, B} = pteracuda_buffer:read(Buf_B),
+    ?assertEqual(B, [[20.0,30.0,40.0,10.0],[25.0,35.0,45.0,15.0]]),
+    ok = pteracuda_buffer:destroy(Buf_A),
+    ok = pteracuda_buffer:destroy(Buf_B),
+    ok = pteracuda_context:destroy(Ctx).

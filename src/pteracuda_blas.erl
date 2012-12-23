@@ -2,7 +2,12 @@
 
 -include("pteracuda_internals.hrl").
 
--export([gemm/11, gemv/9, saxpy/4]).
+-export([gemm/11, 
+	     gemv/9, 
+	     saxpy/4,
+	     geam/10,
+	     smm/4,
+	     transpose/3]).
 
 -type transpose_op() :: transpose | no_transpose | conjugate_transpose.
 
@@ -30,5 +35,28 @@ gemv(#pc_context{ref=Ctx}, Transpose_A , _m, _n, _alpha, #pc_buffer{ref=Buf_A}, 
 	pteracuda_nifs:gemv(Ctx, _transp_A , _m, _n, _alpha, Buf_A, Buf_X, _beta, Buf_Y).
 
 -spec saxpy(context(), float(), float_vector_buffer(), float_vector_buffer() ) -> ok.
-saxpy(#pc_context{ref=Ctx}, _a, #pc_buffer{ref=Buf_X}, #pc_buffer{ref=Buf_Y}) ->
-	pteracuda_nifs:saxpy(Ctx, _a, Buf_X, Buf_Y).
+saxpy(#pc_context{ref=Ctx}, _alpha, #pc_buffer{ref=Buf_X}, #pc_buffer{ref=Buf_Y}) ->
+	pteracuda_nifs:saxpy(Ctx, _alpha, Buf_X, Buf_Y).
+
+
+-spec transpose(context(), float_matrix_buffer(), float_matrix_buffer()) -> ok.
+transpose(#pc_context{ref=Ctx}, #pc_buffer{ref=Buf_A}, #pc_buffer{ref=Buf_B}) ->
+	pteracuda_nifs:transpose(Ctx, Buf_A, Buf_B).    
+
+-spec geam(context(), transpose_op(), transpose_op(), matrix_rows(), matrix_columns(), float(), float_matrix_buffer(), float(), float_matrix_buffer(),  float_matrix_buffer()) -> ok.
+geam(#pc_context{ref=Ctx}, Transpose_A, Transpose_B, _m, _n, _alpha, #pc_buffer{ref=Buf_A}, _beta, #pc_buffer{ref=Buf_B}, #pc_buffer{ref=Buf_C} ) ->
+	case Transpose_A of 
+		transpose -> _transp_A = ?TRANSPOSE;
+		no_transpose -> _transp_A = ?NO_TRANSPOSE;
+		conjugate_transpose -> _transp_A = ?CONJUGATE_TRANSPOSE
+	end,
+	case Transpose_B of 
+		transpose -> _transp_B = ?TRANSPOSE;
+		no_transpose -> _transp_B = ?NO_TRANSPOSE;
+		conjugate_transpose -> _transp_B = ?CONJUGATE_TRANSPOSE
+	end,    
+    pteracuda_nifs:geam(Ctx, _transp_A, _transp_B, _m, _n, _alpha, Buf_A, _beta, Buf_B, Buf_C).
+
+-spec smm(context(), float(), float_matrix_buffer(), float_matrix_buffer()) -> ok.
+smm(#pc_context{ref=Ctx}, _alpha, #pc_buffer{ref=Buf_A}, #pc_buffer{ref=Buf_B}) ->
+    pteracuda_nifs:smm(Ctx, _alpha, Buf_A, Buf_B).    	

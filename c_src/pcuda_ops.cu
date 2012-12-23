@@ -226,14 +226,15 @@ void pcuda_gemv(const int transpose, const int m, const int n, const double alph
     cublasDestroy(handle);
 }
 
+template <typename T>
 struct saxpy_functor
 {
-    const float a;
+    const T a;
 
-    saxpy_functor(float _a) : a(_a) {}
+    saxpy_functor(T _a) : a(_a) {}
 
     __host__ __device__
-        float operator()(const float& x, const float& y) const { 
+        T operator()(const T& x, const T& y) const { 
             return a * x + y;
         }
 };
@@ -246,7 +247,7 @@ void pcuda_saxpy(double a, std::vector<double> *x, std::vector<double> *y)
     thrust::device_vector<float> d_x = *x;
     thrust::device_vector<float> d_y = *y;
 
-    thrust::transform(d_x.begin(), d_x.end(), d_y.begin(), d_y.begin(), saxpy_functor(_a));
+    thrust::transform(d_x.begin(), d_x.end(), d_y.begin(), d_y.begin(), saxpy_functor<float>(_a));
 
     thrust::copy(d_y.begin(), d_y.end(), y->begin());
 }
@@ -275,7 +276,7 @@ void pcuda_transpose(const int _m, const int _n, std::vector<double> *a, std::ve
     size_t n = _n;
     
     thrust::device_vector<float> d_a = *a;
-    thrust::device_vector<float> d_b = *b;
+    thrust::device_vector<float> d_b(b->size());
 
     thrust::counting_iterator<size_t> indices(0);
 
@@ -286,4 +287,68 @@ void pcuda_transpose(const int _m, const int _n, std::vector<double> *a, std::ve
         d_b.begin());    
 
     thrust::copy(d_b.begin(), d_b.end(), b->begin());
+}
+
+void pcuda_geam(const int transpose_a, const int transpose_b, const int m, const int n, const double alpha, std::vector<double> *a, const double beta, std::vector<double> *b, std::vector<double> *c){
+    int lda=m,ldb=m,ldc=m;
+    const float alf = (float)alpha;
+    const float bet = (float)beta;
+    const float *_alpha = &alf;
+    const float *_beta =  &bet;
+    cublasOperation_t _transpose_a, _transpose_b;
+
+    switch (transpose_a){
+        case 0: _transpose_a = CUBLAS_OP_N;break;
+        case 1: _transpose_a = CUBLAS_OP_T;break;
+        case 2: _transpose_a = CUBLAS_OP_C;break;
+    }
+
+    switch (transpose_b){
+        case 0: _transpose_b = CUBLAS_OP_N;break;
+        case 1: _transpose_b = CUBLAS_OP_T;break;
+        case 2: _transpose_b = CUBLAS_OP_C;break;
+    }
+
+    //Fallback to float to support cuda architecture < 1.3  
+    thrust::device_vector<float> d_a = *a;
+    thrust::device_vector<float> d_b = *b;
+    thrust::device_vector<float> d_c(c->size());
+
+    // Create a handle for CUBLAS
+    cublasHandle_t handle;
+    cublasCreate(&handle);
+
+    // Do the actual multiplication
+    cublasStatus_t res = cublasSgeam(handle, _transpose_a, _transpose_b, m, n, _alpha, thrust::raw_pointer_cast(&d_a[0]), lda, _beta, thrust::raw_pointer_cast(&d_b[0]), ldb, thrust::raw_pointer_cast(&d_c[0]), ldc);
+    //std::cout << "\ncublasSgemm Status = " << res << std::endl;
+
+    thrust::copy(d_c.begin(), d_c.end(), c->begin());
+    // Destroy the handle
+    cublasDestroy(handle);
+}
+
+
+template <typename T>
+struct smm_functor
+{
+    const T a;
+
+    smm_functor(T _a) : a(_a) {}
+
+    __host__ __device__
+        T operator()(const T& x) const { 
+            return a * x;
+        }
+};
+
+void pcuda_smm(const double alpha, std::vector<double> *a, std::vector<double> *b){
+    const float _alpha = (float)alpha;
+    //Fallback to float to support cuda architecture < 1.3  
+    thrust::device_vector<float> d_a = *a;
+    thrust::device_vector<float> d_b(b->size());
+
+    thrust::transform(d_a.begin(), d_a.end(), d_b.begin(), smm_functor<float>(_alpha));
+
+    thrust::copy(d_b.begin(), d_b.end(), b->begin());
+      
 }

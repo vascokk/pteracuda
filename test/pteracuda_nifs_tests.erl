@@ -269,11 +269,9 @@ negative_gemm_wrong_A_dim_test()->
     _n = 2,%num_cols_B
     _alpha = 1.0,
     _beta= 0.0,
-    C = [[721.0, 334.0],[300.0,162.0],[4411.0,1336.0]], %row major
     {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
     {ok, Buf_B} = pteracuda_nifs:new_matrix_float_buffer(B),
     {ok, Buf_C} = pteracuda_nifs:new_matrix_float_buffer(_m,_n),
-    %{error,_} = pteracuda_nifs:mmul(Ctx, Buf_A, Buf_B, Buf_C, _m, _k, _n),
     {error,_} = pteracuda_nifs:gemm(Ctx, ?NO_TRANSPOSE, ?NO_TRANSPOSE, _m, _n, _k, _alpha, Buf_A, Buf_B, _beta, Buf_C),
     {ok, _} = pteracuda_nifs:read_buffer(Buf_C),
     ok = pteracuda_nifs:destroy_buffer(Buf_A),
@@ -312,7 +310,6 @@ negative_gemv_wrong_A_dim_test()->
     _alpha = 1.0,
     _beta = 0.0,
     X = [2.0,5.0,1.0,7.0],
-    Y = [0.0, 0.0], 
     {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
     {ok, Buf_X} = pteracuda_nifs:new_float_buffer(),
     pteracuda_nifs:write_buffer(Buf_X, X),
@@ -324,7 +321,7 @@ negative_gemv_wrong_A_dim_test()->
     ok = pteracuda_nifs:destroy_buffer(Buf_Y),
     pteracuda_nifs:destroy_context(Ctx).
     
-%SAXPY:  y <- a * x + y
+%SAXPY:  y <- α * x + y
 saxpy_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
     _a = 2.0, %!!!! this has to be float
@@ -356,9 +353,11 @@ negative_saxpy_sizeX_lt_sizeY_test()->
     pteracuda_nifs:destroy_context(Ctx).
 
 
-%% Very slow at the moment!!!!!  Don't use this function!!!
-%Transpose 
-% B <- A'
+%%%
+%%% BLAS-like functions
+%%%
+
+%Transpose: B <- transpose(A)
 transpose_test()->
     {ok, Ctx} = pteracuda_nifs:new_context(),
     A = [[7,8,15,3],[4,4,6,2],[3,7,99,4]], %row major
@@ -369,6 +368,43 @@ transpose_test()->
     ok = pteracuda_nifs:transpose(Ctx, Buf_A, Buf_B),
     {ok, B} = pteracuda_nifs:read_buffer(Buf_B),
     ?assertEqual(B, A_transposed),
+    ok = pteracuda_nifs:destroy_buffer(Buf_A),
+    ok = pteracuda_nifs:destroy_buffer(Buf_B),
+    pteracuda_nifs:destroy_context(Ctx).
+
+% GEAM:  C = α op ( A ) + β op ( B )
+% (this function is CUBLAS-specific)
+geam_test()->
+    {ok, Ctx} = pteracuda_nifs:new_context(),
+    A = [[7,8,15,3],[4,4,6,2],[3,7,99,4]], %row major
+    B = [[1,2,3,4],[5,6,7,8],[9,10,11,12]],
+    _alpha = 1.0,
+    _beta = 1.0,
+    _m = 3,
+    _n = 4,
+    {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
+    {ok, Buf_B} = pteracuda_nifs:new_matrix_float_buffer(B),
+    {ok, Buf_C} = pteracuda_nifs:new_matrix_float_buffer(_m, _n),
+    ok = pteracuda_nifs:geam(Ctx, ?NO_TRANSPOSE, ?NO_TRANSPOSE, _m, _n, _alpha, Buf_A, _beta, Buf_B, Buf_C),
+    {ok, C} = pteracuda_nifs:read_buffer(Buf_C),
+    ?assertEqual(C, [[8.0,10.0,18.0,7.0],[9.0,10.0,13.0,10.0],[12.0,17.0,110.0,16.0]]),
+    ok = pteracuda_nifs:destroy_buffer(Buf_A),
+    ok = pteracuda_nifs:destroy_buffer(Buf_B),
+    pteracuda_nifs:destroy_context(Ctx).
+
+% smm (Scalar Matrix Multiply)
+% B <- α * A
+smm_test()->
+    {ok, Ctx} = pteracuda_nifs:new_context(),
+    A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
+    _m = 2, %rows A
+    _n = 4, %columns A
+    _alpha = 5.0,
+    {ok, Buf_A} = pteracuda_nifs:new_matrix_float_buffer(A),
+    {ok, Buf_B} = pteracuda_nifs:new_matrix_float_buffer(_m, _n),
+    ok = pteracuda_nifs:smm(Ctx, _alpha, Buf_A, Buf_B),
+    {ok, B} = pteracuda_nifs:read_buffer(Buf_B),
+    ?assertEqual(B, [[20.0,30.0,40.0,10.0],[25.0,35.0,45.0,15.0]]),
     ok = pteracuda_nifs:destroy_buffer(Buf_A),
     ok = pteracuda_nifs:destroy_buffer(Buf_B),
     pteracuda_nifs:destroy_context(Ctx).

@@ -39,7 +39,12 @@
          new_matrix_int_buffer/2,
          new_matrix_float_buffer/2]).
 
--export([gemm/11, gemv/9, saxpy/4, transpose/3]).
+-export([gemm/11, 
+         gemv/9, 
+         saxpy/4, 
+         transpose/3, 
+         geam/10,
+         smm/4]).
 
 -type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
 
@@ -130,6 +135,14 @@ saxpy(_Ctx, _a, _X, _Y) ->
 
 -spec transpose(term(), float_matrix(), float_matrix()) -> ok.
 transpose(_Ctx, _A, _B) ->
+    ?MISSING_NIF.    
+
+-spec geam(term(), transpose_op(), transpose_op(), matrix_rows(), matrix_columns(), float(), float_matrix(), float(), float_matrix(),  float_matrix()) -> ok.
+geam(_Ctx, _transpose_op_A, _transpose_op_B, _m, _n, _alpha, _A, _beta, _B, _C ) ->
+    ?MISSING_NIF.
+
+-spec smm(term(), float(), float_matrix(), float_matrix()) -> ok.
+smm(_Ctx, _alpha, _A, _B) ->
     ?MISSING_NIF.    
 
 init() ->
