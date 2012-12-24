@@ -39,9 +39,9 @@ benchmark_test_() ->
 
 %% Matrix-matrix multiplication benchmark
 mmul() ->
-   	_m = 500,
-    _k = 500,
-    _n = 500,
+   	_m = 300,
+    _k = 300,
+    _n = 300,
     _alpha = 1.0,
     _beta= 0.0,
 	  {T1, T2, T3} = erlang:now(),
@@ -182,17 +182,15 @@ smm_test()->
     ok = pteracuda_context:destroy(Ctx).
 
 transpose_benchmark_test()->
-    _m = 500,
-    _n = 500,
+    Rows = 500,
+    Cols = 500,
     {T1, T2, T3} = erlang:now(),
     random:seed(T1, T2, T3),
-    Rows = _m,
-    Cols = _n,
     M = [[random:uniform(1000)+0.1 || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)],
     {ok, Ctx} = pteracuda_context:new(),
 
     {ok, Buf_M} = pteracuda_buffer:new(matrix, float, row_major, M),
-    {ok, Buf_MT} =  pteracuda_buffer:new(matrix, float, row_major,_m,_n),
+    {ok, Buf_MT} =  pteracuda_buffer:new(matrix, float, row_major, Cols, Rows),
     Fun = fun(M1) -> transpose(M1) end,
     {Time1, _} = timer:tc(pteracuda_nifs, transpose, [Ctx, Buf_M, Buf_MT]),
     {Time2, _} = timer:tc(Fun, [M]),

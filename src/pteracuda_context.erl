@@ -1,6 +1,6 @@
 -module(pteracuda_context).
 
--include("pteracuda_internals.hrl").
+-include("include/pteracuda.hrl").
 
 -export([new/0,
          new/1,

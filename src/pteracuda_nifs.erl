@@ -1,6 +1,6 @@
 -module(pteracuda_nifs).
 
--include("pteracuda_internals.hrl").
+-include("include/pteracuda.hrl").
 -define(NIF_API_VERSION, 2).
 -define(MISSING_NIF, throw({error, missing_nif})).
 
