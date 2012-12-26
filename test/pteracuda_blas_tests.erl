@@ -2,7 +2,7 @@
 
 -compile(export_all).
 
--include("src/pteracuda_internals.hrl").
+-include("pteracuda.hrl").
 
 -include_lib("eunit/include/eunit.hrl").
 

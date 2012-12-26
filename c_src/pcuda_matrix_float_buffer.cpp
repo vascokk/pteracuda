@@ -14,19 +14,19 @@
 #define IDX2RCM(idx,R) (idx%R) //Idex to row for CM matrix
 #define IDX2CCM(idx,R) (idx/R) //index to col for CM matrix
 
-PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer() {
-    this->data = new std::vector<double>();
+PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer():PCudaFloatBuffer() {
     this->_rows = 1;
+    this->_cols = data->size();
+    
 }
 
-PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer(unsigned  rows, unsigned  cols) {
+PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer(unsigned  rows, unsigned  cols){
     this->_rows = rows;
     this->_cols = cols;
     this->data = new std::vector<double>(rows*cols);
 }
 
 PCudaMatrixFloatBuffer::~PCudaMatrixFloatBuffer() {
-    delete this->data;
 }
 
 unsigned int PCudaMatrixFloatBuffer::size() {

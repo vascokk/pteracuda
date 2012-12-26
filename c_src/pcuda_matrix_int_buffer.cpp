@@ -2,10 +2,8 @@
 #include "pcuda_buffer.h"
 #include "pcuda_ops.h"
 
-PCudaMatrixIntBuffer::PCudaMatrixIntBuffer() {
-    this->data = new std::vector<long>();
+PCudaMatrixIntBuffer::PCudaMatrixIntBuffer():PCudaIntBuffer() {
     this->_rows = 1;
-    this->_cols = data->size();
 }
 
 PCudaMatrixIntBuffer::PCudaMatrixIntBuffer(unsigned  rows, unsigned  cols) {
@@ -15,7 +13,7 @@ PCudaMatrixIntBuffer::PCudaMatrixIntBuffer(unsigned  rows, unsigned  cols) {
 }
 
 PCudaMatrixIntBuffer::~PCudaMatrixIntBuffer() {
-    delete this->data;
+
 }
 
 unsigned int PCudaMatrixIntBuffer::size() {

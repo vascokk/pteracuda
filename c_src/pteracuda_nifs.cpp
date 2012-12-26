@@ -110,12 +110,6 @@ struct PCudaBufferRef {
     bool destroyed;
 };
 
-/*struct PCudaMatrixBufferRef {
-    PCudaMatrixBuffer *buffer;
-    bool destroyed;
-};*/
-
-
 struct PCudaContextRef {
     CUcontext ctx;
     bool destroyed;
@@ -629,7 +623,7 @@ ERL_NIF_TERM pteracuda_nifs_geam(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
     }
 
     cuCtxSetCurrent(ctxRef->ctx);
-    //pcuda_mmul(((PCudaMatrixFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_B->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_C->buffer)->get_data(), m, k, n);
+
     pcuda_geam(transpose_a, transpose_b, m, n, alpha, ((PCudaMatrixFloatBuffer*)ref_A->buffer)->get_data(), beta, ((PCudaMatrixFloatBuffer*)ref_B->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_C->buffer)->get_data());
     
     return ATOM_OK;
@@ -648,14 +642,13 @@ ERL_NIF_TERM pteracuda_nifs_smm(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
         return enif_make_badarg(env);
     }
 
-    if(((PCudaMatrixFloatBuffer*)ref_A->buffer)->rows() != ((PCudaMatrixFloatBuffer*)ref_B->buffer)->rows() ||
-        ((PCudaMatrixFloatBuffer*)ref_A->buffer)->cols() !=  ((PCudaMatrixFloatBuffer*)ref_B->buffer)->cols() ){
-        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix A dimension(s) do not match matrix B dimension(s)")); 
+    if(((PCudaFloatBuffer*)ref_A->buffer)->size() != ((PCudaFloatBuffer*)ref_B->buffer)->size() ){
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Buffer A size does not match buffer B size")); 
     }
 
     cuCtxSetCurrent(ctxRef->ctx);
-    //pcuda_mmul(((PCudaMatrixFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_B->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_C->buffer)->get_data(), m, k, n);
-    pcuda_smm(alpha, ((PCudaMatrixFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaMatrixFloatBuffer*)ref_B->buffer)->get_data());
+
+    pcuda_smm(alpha, ((PCudaFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaFloatBuffer*)ref_B->buffer)->get_data());
     
     return ATOM_OK;
 }

@@ -106,7 +106,7 @@ protected:
 };
 
 
-class PCudaMatrixIntBuffer : public PCudaMatrix, public PCudaBuffer {
+class PCudaMatrixIntBuffer : public PCudaMatrix, public PCudaIntBuffer {
 private:
     virtual bool sort() { throw "Method sort() not supported for PCudaMatrixBuffer!";};
     virtual bool contains(ErlNifEnv *env, ERL_NIF_TERM rawTarget) { throw "Method contains() not supported for PCudaMatrixBuffer!";};
@@ -124,12 +124,9 @@ public:
     virtual ERL_NIF_TERM toErlTerms(ErlNifEnv *env);
     virtual void write(ErlNifEnv *env, ERL_NIF_TERM data);
     virtual void clear();
-    std::vector<long>* get_data(){return data;};
-protected:
-    std::vector<long> *data;
 };
 
-class PCudaMatrixFloatBuffer : public PCudaMatrix, public PCudaBuffer {
+class PCudaMatrixFloatBuffer : public PCudaMatrix, public PCudaFloatBuffer {
 private:
     virtual bool sort() { throw "Method sort() not supported for PCudaMatrixBuffer!";};
     virtual bool contains(ErlNifEnv *env, ERL_NIF_TERM rawTarget) { throw "Method contains() not supported for PCudaMatrixBuffer!";};
@@ -147,10 +144,6 @@ public:
     virtual ERL_NIF_TERM toErlTerms(ErlNifEnv *env);
     virtual void write(ErlNifEnv *env, ERL_NIF_TERM data);
     virtual void clear();
-    
-    std::vector<double>* get_data(){return data;};
-protected:
-    std::vector<double> *data;
 };
 
 #endif
