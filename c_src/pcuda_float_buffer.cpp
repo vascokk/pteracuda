@@ -6,6 +6,10 @@ PCudaFloatBuffer::PCudaFloatBuffer() {
     this->data = new std::vector<double>();
 }
 
+PCudaFloatBuffer::PCudaFloatBuffer(unsigned long size) {
+    this->data = new std::vector<double>(size);
+}
+
 PCudaFloatBuffer::~PCudaFloatBuffer() {
     delete this->data;
 }
@@ -17,10 +21,13 @@ unsigned int PCudaFloatBuffer::size() {
 void PCudaFloatBuffer::write(ErlNifEnv *env, ERL_NIF_TERM data) {
     ERL_NIF_TERM head;
     double value;
+    long lvalue;
 
     while (enif_get_list_cell(env, data, &head, &data)) {
         if (enif_get_double(env, head, &value)) {
             this->data->push_back(value);
+        }else if (enif_get_long(env, head, &lvalue)) {
+            this->data->push_back((double)lvalue);
         }
     }
 }

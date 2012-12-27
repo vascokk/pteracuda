@@ -6,6 +6,10 @@ PCudaIntBuffer::PCudaIntBuffer() {
     this->data = new std::vector<long>();
 }
 
+PCudaIntBuffer::PCudaIntBuffer(unsigned long size) {
+    this->data = new std::vector<long>(size);
+}
+
 PCudaIntBuffer::~PCudaIntBuffer() {
     delete this->data;
 }

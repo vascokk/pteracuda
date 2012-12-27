@@ -2,7 +2,7 @@
 
 -include("include/pteracuda.hrl").
 
--export([new/1, new/4, new/5,
+-export([new/1, new/2, new/4, new/5,
          destroy/1,
          size/1,
          write/2,
@@ -24,6 +24,13 @@ new(float) ->
 new(string) ->
     {ok, Buf} = pteracuda_nifs:new_string_buffer(),
     {ok, #pc_buffer{type = vector, data_type=string, ref=Buf}}.
+
+-spec new(data_type, integer()) -> {ok, buffer()}.
+new(float, Size) ->
+    {ok, Buf} = pteracuda_nifs:new_float_buffer(Size),
+    %pteracuda_nifs:write_buffer(Buf, [0.0|| X<-lists:seq(1,Size)]),
+    {ok, #pc_buffer{type = vector, data_type=float, ref=Buf}}.
+
 
 -spec new(matrix, data_type(), storage_layout(), matrix_rows(), matrix_columns()) -> {ok, buffer()}.
 new(matrix, float, StorageLayout, Rows, Cols) ->

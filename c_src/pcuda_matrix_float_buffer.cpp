@@ -20,10 +20,10 @@ PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer():PCudaFloatBuffer() {
     
 }
 
-PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer(unsigned  rows, unsigned  cols){
+PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer(unsigned  rows, unsigned  cols):PCudaFloatBuffer(rows*cols){
     this->_rows = rows;
     this->_cols = cols;
-    this->data = new std::vector<double>(rows*cols);
+    //this->data = new std::vector<double>(rows*cols);
 }
 
 PCudaMatrixFloatBuffer::~PCudaMatrixFloatBuffer() {

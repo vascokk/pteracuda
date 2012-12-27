@@ -16,9 +16,11 @@
          new_context/1,
          destroy_context/1]).
 
--export([new_int_buffer/0,
+-export([new_int_buffer/0, 
+         new_int_buffer/1,
          new_string_buffer/0,
          new_float_buffer/0,
+         new_float_buffer/1,
          destroy_buffer/1,
          buffer_size/1]).
 
@@ -46,6 +48,9 @@
          geam/10,
          smm/4]).
 
+-export([sigmoid/3,
+         tanh/3]).
+
 -type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
 
 new_context() ->
@@ -60,10 +65,17 @@ destroy_context(_Ctx) ->
 new_int_buffer() ->
     ?MISSING_NIF.
 
+
+new_int_buffer(_size) ->
+    ?MISSING_NIF.
+
 new_string_buffer() ->
     ?MISSING_NIF.
 
 new_float_buffer() ->
+    ?MISSING_NIF.
+
+new_float_buffer(_size) ->
     ?MISSING_NIF.
 
 destroy_buffer(_Buffer) ->
@@ -144,6 +156,16 @@ geam(_Ctx, _transpose_op_A, _transpose_op_B, _m, _n, _alpha, _A, _beta, _B, _C )
 -spec smm(term(), float(), float_matrix(), float_matrix()) -> ok.
 smm(_Ctx, _alpha, _A, _B) ->
     ?MISSING_NIF.    
+
+
+-spec sigmoid(term(), float_vector()|float_matrix(), float_vector()|float_matrix()) -> ok.
+sigmoid(_Ctx, _A, _B) ->
+    ?MISSING_NIF.
+
+-spec tanh(term(), float_vector()|float_matrix(), float_vector()|float_matrix()) -> ok.
+tanh(_Ctx, _A, _B) ->
+    ?MISSING_NIF.
+
 
 init() ->
     PrivDir = case code:priv_dir(pteracuda) of

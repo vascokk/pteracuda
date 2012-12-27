@@ -36,6 +36,7 @@ public:
 class PCudaIntBuffer : public PCudaBuffer {
 public:
     PCudaIntBuffer();
+    PCudaIntBuffer(unsigned long size);
     virtual ~PCudaIntBuffer();
     virtual unsigned int size();
     virtual PCudaBufferTypes type() { return BUF_TYPE_INTEGER; };
@@ -57,6 +58,7 @@ protected:
 class PCudaFloatBuffer : public PCudaBuffer{
 public:
     PCudaFloatBuffer();
+    PCudaFloatBuffer(unsigned long size);
     virtual ~PCudaFloatBuffer();
     virtual unsigned int size();
     virtual PCudaBufferTypes type() { return BUF_TYPE_FLOAT; };
