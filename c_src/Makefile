@@ -5,7 +5,7 @@ all: compile
 compile: pcuda_ops.o pcuda_blas.o pcuda_kernels.o pcuda_string.o
 
 pcuda_ops.o:
-	@nvcc $(NVCCFLAGS) pcuda_ops.cu -o pcuda_ops.o
+	nvcc $(NVCCFLAGS) pcuda_ops.cu -o pcuda_ops.o
 
 pcuda_blas.o:
 	nvcc $(NVCCFLAGS) pcuda_blas.cu -o pcuda_blas.o 
