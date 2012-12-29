@@ -2,6 +2,8 @@
 -define (TRANSPOSE, 1).
 -define (CONJUGATE_TRANSPOSE, 2).
 
+-define (ROW_MAJOR, 0).
+-define (COLUMN_MAJOR, 1).
 
 -type int_vector() :: [integer()].
 -type float_vector() :: [float()].
@@ -12,13 +14,13 @@
 -type matrix_columns() :: integer().
 -type storage_type() :: vector | matrix.
 -type data_type() :: integer | float | string.
--type storage_layout() :: row_major | column_major.
+-type orientation() :: row_major | column_major.
 
 
--record(pc_buffer, {type      :: storage_type(),
-					data_type :: data_type(),
-					layout    :: storage_layout(),
-                    ref       :: term()}).
+-record(pc_buffer, {type         :: storage_type(),
+					data_type    :: data_type(),
+					orientation  :: orientation(),
+                    ref          :: term()}).
 
 -record(pc_context, {ref}).
 

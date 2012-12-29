@@ -32,23 +32,39 @@ new(float, Size) ->
     {ok, #pc_buffer{type = vector, data_type=float, ref=Buf}}.
 
 
--spec new(matrix, data_type(), storage_layout(), matrix_rows(), matrix_columns()) -> {ok, buffer()}.
-new(matrix, float, StorageLayout, Rows, Cols) ->
-    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(Rows,Cols),
-    {ok, #pc_buffer{type = matrix, data_type=float, layout=StorageLayout, ref=Buf}};
-new(matrix, integer, StorageLayout, Rows, Cols) ->
-    {ok, Buf} = pteracuda_nifs:new_matrix_int_buffer(Rows,Cols),
-    {ok, #pc_buffer{type = matrix, data_type=integer, layout=StorageLayout, ref=Buf}}.
+-spec new(matrix, data_type(), orientation(), matrix_rows(), matrix_columns()) -> {ok, buffer()}.
+new(matrix, float, Orientation, Rows, Cols) ->
+    case Orientation of 
+        row_major -> _orientation = ?ROW_MAJOR;
+        column_major -> _orientation = ?COLUMN_MAJOR
+    end,
+    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(Rows,Cols, _orientation),
+    {ok, #pc_buffer{type = matrix, data_type=float, orientation=Orientation, ref=Buf}};
+new(matrix, integer, Orientation, Rows, Cols) ->
+    case Orientation of 
+        row_major -> _orientation = ?ROW_MAJOR;
+        column_major -> _orientation = ?COLUMN_MAJOR
+    end,
+    {ok, Buf} = pteracuda_nifs:new_matrix_int_buffer(Rows,Cols, _orientation),
+    {ok, #pc_buffer{type = matrix, data_type=integer, orientation=Orientation, ref=Buf}}.
 
 
--spec new(matrix, float, storage_layout(), float_matrix()) -> {ok, buffer()};
-         (matrix, integer, storage_layout(), int_matrix()) -> {ok, buffer()}.
-new(matrix, float, StorageLayout, Matrix) ->
-    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(Matrix),
-    {ok, #pc_buffer{type = matrix, data_type=float, layout=StorageLayout,  ref=Buf}};    
-new(matrix, integer, StorageLayout, Matrix) ->
-    {ok, Buf} = pteracuda_nifs:new_matrix_int_buffer(Matrix),
-    {ok, #pc_buffer{type = matrix, data_type=integer, layout=StorageLayout, ref=Buf}}.
+-spec new(matrix, float, orientation(), float_matrix()) -> {ok, buffer()};
+         (matrix, integer, orientation(), int_matrix()) -> {ok, buffer()}.
+new(matrix, float, Orientation, Matrix) ->
+    case Orientation of 
+        row_major -> _orientation = ?ROW_MAJOR;
+        column_major -> _orientation = ?COLUMN_MAJOR
+    end,
+    {ok, Buf} = pteracuda_nifs:new_matrix_float_buffer(Matrix, _orientation),
+    {ok, #pc_buffer{type = matrix, data_type=float, orientation=Orientation,  ref=Buf}};    
+new(matrix, integer, Orientation, Matrix) ->
+    case Orientation of 
+        row_major -> _orientation = ?ROW_MAJOR;
+        column_major -> _orientation = ?COLUMN_MAJOR
+    end,
+    {ok, Buf} = pteracuda_nifs:new_matrix_int_buffer(Matrix, _orientation),
+    {ok, #pc_buffer{type = matrix, data_type=integer, orientation=Orientation, ref=Buf}}.
 
 
 destroy(#pc_buffer{ref=Ref}) ->

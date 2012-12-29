@@ -36,10 +36,10 @@
          buffer_intersection/3,
          buffer_minmax/2]).
 
--export([new_matrix_int_buffer/1,
-         new_matrix_float_buffer/1,
-         new_matrix_int_buffer/2,
-         new_matrix_float_buffer/2]).
+-export([new_matrix_int_buffer/2,
+         new_matrix_float_buffer/2,
+         new_matrix_int_buffer/3,
+         new_matrix_float_buffer/3]).
 
 -export([gemm/11, 
          gemv/9, 
@@ -52,6 +52,7 @@
          tanh/3]).
 
 -type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
+-type orientation_C() :: ?ROW_MAJOR | ?COLUMN_MAJOR.
 
 new_context() ->
     ?MISSING_NIF.
@@ -117,20 +118,20 @@ buffer_minmax(_Ctx, _Buffer) ->
     ?MISSING_NIF.
 
 %% Matrices
--spec new_matrix_int_buffer(int_matrix()) -> {ok, term()}.
-new_matrix_int_buffer(_A) ->
+-spec new_matrix_int_buffer(int_matrix(), orientation_C()) -> {ok, term()}.
+new_matrix_int_buffer(_A, _orientation) ->
     ?MISSING_NIF.
 
--spec new_matrix_float_buffer(float_matrix()) -> {ok, term()}.
-new_matrix_float_buffer(_A) ->
+-spec new_matrix_float_buffer(float_matrix(), orientation_C()) -> {ok, term()}.
+new_matrix_float_buffer(_A, _orientation) ->
     ?MISSING_NIF.   
 
--spec new_matrix_int_buffer(matrix_rows(), matrix_columns()) -> {ok, term()}.
-new_matrix_int_buffer(_m, _n) ->
+-spec new_matrix_int_buffer(matrix_rows(), matrix_columns(), orientation_C()) -> {ok, term()}.
+new_matrix_int_buffer(_m, _n, _orientation) ->
     ?MISSING_NIF.
 
--spec new_matrix_float_buffer(matrix_rows(), matrix_columns()) -> {ok, term()}.
-new_matrix_float_buffer(_m, _n) ->
+-spec new_matrix_float_buffer(matrix_rows(), matrix_columns(), orientation_C()) -> {ok, term()}.
+new_matrix_float_buffer(_m, _n, _orientation) ->
     ?MISSING_NIF.    
 
 -spec gemm(term(), transpose_op(), transpose_op(), matrix_rows(), matrix_columns(), matrix_rows(), float(), float_matrix(), float_matrix(), float(), float_matrix()) -> ok.

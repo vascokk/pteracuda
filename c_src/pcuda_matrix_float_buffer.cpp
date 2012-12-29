@@ -20,9 +20,10 @@ PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer():PCudaFloatBuffer() {
     
 }
 
-PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer(unsigned  rows, unsigned  cols):PCudaFloatBuffer(rows*cols){
+PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer(unsigned int rows, unsigned int cols, MatrixOrientation orientation):PCudaFloatBuffer(rows*cols){
     this->_rows = rows;
     this->_cols = cols;
+    this->orientation = orientation;
     //this->data = new std::vector<double>(rows*cols);
 }
 
@@ -44,21 +45,33 @@ void PCudaMatrixFloatBuffer::write(ErlNifEnv *env, ERL_NIF_TERM data) {
     unsigned C = this->_cols; 
     unsigned long idx = 0;
    
-    while (enif_get_list_cell(env, data, &head_row, &data)) 
-      while (enif_get_list_cell(env, head_row, &head, &head_row))
-        if (enif_get_double(env, head, &value)) {
-            //this->data->push_back(value);
-            this->data->at((IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) ) = value;
-            ++idx;
-        }else if (enif_get_long(env, head, &lvalue)) {
-            //this->data->push_back((double)lvalue);
-            this->data->at(IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) = (double)lvalue;
-            ++idx;
+    if(this->orientation == ROW_MAJOR){
+        while (enif_get_list_cell(env, data, &head_row, &data)) {
+          while (enif_get_list_cell(env, head_row, &head, &head_row))
+            if (enif_get_double(env, head, &value)) {
+                //this->data->push_back(value);
+                this->data->at((IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) ) = value;
+                ++idx;
+            }else if (enif_get_long(env, head, &lvalue)) {
+                //this->data->push_back((double)lvalue);
+                this->data->at(IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) = (double)lvalue;
+                ++idx;
+            }
         }
-    
+        
         if(idx != this->data->size()){ 
             throw std::runtime_error("ERROR: Data does not fit the matrix size.");
         }
+    } else {
+        while (enif_get_list_cell(env, data, &head, &data)) {
+            if (enif_get_double(env, head, &value)) {
+                this->data->push_back(value);
+            }else if (enif_get_long(env, head, &lvalue)) {
+                this->data->push_back((double)lvalue);
+            }
+        }
+    }
+
 }
 
 
@@ -73,7 +86,7 @@ ERL_NIF_TERM PCudaMatrixFloatBuffer::toErlTerms(ErlNifEnv *env) {
     unsigned long idx = 0;
     std::vector<ERL_NIF_TERM> rows;
 
-    if(this->rows() > 1){
+    if(this->rows() > 1 && this->orientation == ROW_MAJOR){
         for(int i=0; i<this->_rows; i++){
             row = enif_make_list(env, 0);
             rows.push_back(row);
@@ -96,6 +109,7 @@ ERL_NIF_TERM PCudaMatrixFloatBuffer::toErlTerms(ErlNifEnv *env) {
             }
         }        
     }
+
     return retval;
 }
 

@@ -59,14 +59,14 @@ mmul() ->
     {ok, Ctx} = pteracuda_nifs:new_context(),
 
     %% GPU CUBLAS test
-    {ok, Buf_M1} = pteracuda_nifs:new_matrix_float_buffer(M1),
-    {ok, Buf_M2} =  pteracuda_nifs:new_matrix_float_buffer(M2),
-    {ok, Buf_C} = pteracuda_nifs:new_matrix_float_buffer(_m,_n),
+    {ok, Buf_M1} = pteracuda_nifs:new_matrix_float_buffer(M1, ?ROW_MAJOR),
+    {ok, Buf_M2} =  pteracuda_nifs:new_matrix_float_buffer(M2, ?ROW_MAJOR),
+    {ok, Buf_C} = pteracuda_nifs:new_matrix_float_buffer(_m,_n, ?ROW_MAJOR),
     {Time2, _} = timer:tc(pteracuda_nifs, gemm, [Ctx, ?NO_TRANSPOSE, ?NO_TRANSPOSE, _m, _n, _k, _alpha, Buf_M1, Buf_M2, _beta, Buf_C]),
 
 
     %% CPU multiplication with GPU transpose
-    {ok, Buf_M2T} = pteracuda_nifs:new_matrix_float_buffer(_n, _k),
+    {ok, Buf_M2T} = pteracuda_nifs:new_matrix_float_buffer(_n, _k, ?ROW_MAJOR),
     {Time3, _} = timer:tc(Fun,[M1,transpose_gpu(Ctx, Buf_M1, Buf_M2T)]),   
 
     ok = pteracuda_nifs:destroy_buffer(Buf_M1),

@@ -6,6 +6,11 @@
 
 #include "erl_nif.h"
 
+enum MatrixOrientation {
+    ROW_MAJOR,
+    COLUMN_MAJOR
+};
+
 enum PCudaBufferTypes {
     BUF_TYPE_INTEGER,
     BUF_TYPE_STRING,
@@ -100,26 +105,20 @@ protected:
 
 class PCudaMatrix {
 public:
-    virtual unsigned  rows() {return _rows;};
-    virtual unsigned  cols() {return _cols;};
+    unsigned int rows() {return _rows;};
+    unsigned int cols() {return _cols;};
+    MatrixOrientation storage() {return orientation;}
 protected:
-    unsigned  _rows;
-    unsigned  _cols;
+    unsigned int _rows;
+    unsigned int _cols;
+    MatrixOrientation orientation;
 };
 
 
 class PCudaMatrixIntBuffer : public PCudaMatrix, public PCudaIntBuffer {
-private:
-    virtual bool sort() { throw "Method sort() not supported for PCudaMatrixBuffer!";};
-    virtual bool contains(ErlNifEnv *env, ERL_NIF_TERM rawTarget) { throw "Method contains() not supported for PCudaMatrixBuffer!";};
-    virtual void delete_at(unsigned long position)  { throw "Method delete_at() not supported for PCudaMatrixBuffer!";};
-    virtual bool insert_at(unsigned long position, ErlNifEnv *env, ERL_NIF_TERM value) { throw "Method insert_at() not supported for PCudaMatrixBuffer!";};
-    virtual bool copy(PCudaBuffer *src)  { throw "Method copy() not supported for PCudaMatrixBuffer!";};
-    virtual ERL_NIF_TERM intersect(ErlNifEnv *env, PCudaBuffer *other)  { throw "Method intersect() not supported for PCudaMatrixBuffer!";};
-    virtual ERL_NIF_TERM minmax(ErlNifEnv *env)  { throw "Method minmax() not supported for PCudaMatrixBuffer!";};
 public:
     PCudaMatrixIntBuffer();
-    PCudaMatrixIntBuffer(unsigned  rows, unsigned  cols);
+    PCudaMatrixIntBuffer(unsigned int rows, unsigned int cols, MatrixOrientation orientation);
     virtual ~PCudaMatrixIntBuffer();
     virtual unsigned int size();
     virtual PCudaBufferTypes type() { return BUF_TYPE_MATRIX_INTEGER; };
@@ -129,17 +128,9 @@ public:
 };
 
 class PCudaMatrixFloatBuffer : public PCudaMatrix, public PCudaFloatBuffer {
-private:
-    virtual bool sort() { throw "Method sort() not supported for PCudaMatrixBuffer!";};
-    virtual bool contains(ErlNifEnv *env, ERL_NIF_TERM rawTarget) { throw "Method contains() not supported for PCudaMatrixBuffer!";};
-    virtual void delete_at(unsigned long position)  { throw "Method delete_at() not supported for PCudaMatrixBuffer!";};
-    virtual bool insert_at(unsigned long position, ErlNifEnv *env, ERL_NIF_TERM value) { throw "Method insert_at() not supported for PCudaMatrixBuffer!";};
-    virtual bool copy(PCudaBuffer *src)  { throw "Method copy() not supported for PCudaMatrixBuffer!";};
-    virtual ERL_NIF_TERM intersect(ErlNifEnv *env, PCudaBuffer *other)  { throw "Method intersect() not supported for PCudaMatrixBuffer!";};
-    virtual ERL_NIF_TERM minmax(ErlNifEnv *env)  { throw "Method minmax() not supported for PCudaMatrixBuffer!";};
 public:
     PCudaMatrixFloatBuffer();
-    PCudaMatrixFloatBuffer(unsigned  rows, unsigned  cols);
+    PCudaMatrixFloatBuffer(unsigned int rows, unsigned int cols, MatrixOrientation orientation);
     virtual ~PCudaMatrixFloatBuffer();
     virtual unsigned int size();
     virtual PCudaBufferTypes type() { return BUF_TYPE_MATRIX_FLOAT; };

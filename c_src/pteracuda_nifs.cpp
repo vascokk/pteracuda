@@ -93,10 +93,10 @@ extern "C" {
         {"buffer_intersection", 3, pteracuda_nifs_buffer_intersection},
         {"buffer_minmax", 2, pteracuda_nifs_buffer_minmax},
 
-        {"new_matrix_int_buffer", 1, pteracuda_nifs_new_matrix_int_buffer},
-        {"new_matrix_float_buffer", 1, pteracuda_nifs_new_matrix_float_buffer},
         {"new_matrix_int_buffer", 2, pteracuda_nifs_new_matrix_int_buffer},
         {"new_matrix_float_buffer", 2, pteracuda_nifs_new_matrix_float_buffer},
+        {"new_matrix_int_buffer", 3, pteracuda_nifs_new_matrix_int_buffer},
+        {"new_matrix_float_buffer", 3, pteracuda_nifs_new_matrix_float_buffer},
 
         {"gemm", 11, pteracuda_nifs_gemm},
         {"gemv", 9, pteracuda_nifs_gemv},
@@ -419,18 +419,24 @@ ERL_NIF_TERM pteracuda_nifs_buffer_minmax(ErlNifEnv *env, int argc, const ERL_NI
 
 //////////////////// Matrix buffer
 ERL_NIF_TERM pteracuda_nifs_new_matrix_int_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    unsigned rows;
-    unsigned cols;    
+    unsigned int rows;
+    unsigned int cols;    
     bool from_matrix = false;
+    MatrixOrientation orientation = ROW_MAJOR;
+    unsigned int mo;
 
-    if (argc == 1) {
+    if (argc == 2) {
         ERL_NIF_TERM head;
         ERL_NIF_TERM tail;
-        enif_get_list_length(env, argv[0], &rows);
-        enif_get_list_cell(env, argv[0], &head, &tail);
-        enif_get_list_length(env, head, &cols);
+        if(!enif_get_list_length(env, argv[0], &rows) ||
+           !enif_get_list_cell(env, argv[0], &head, &tail) ||
+           !enif_get_list_length(env, head, &cols) ||
+           !enif_get_uint(env, argv[1], &mo)) return enif_make_badarg(env);
         from_matrix = true;
-    }else if (argc !=2 || !enif_get_uint(env, argv[0], &rows) || !enif_get_uint(env, argv[1], &cols)) {
+    }else if (argc !=3 || 
+              !enif_get_uint(env, argv[0], &rows) || 
+              !enif_get_uint(env, argv[1], &cols) ||
+              !enif_get_uint(env, argv[2], &mo)) {
         return enif_make_badarg(env);
     }
     
@@ -440,7 +446,13 @@ ERL_NIF_TERM pteracuda_nifs_new_matrix_int_buffer(ErlNifEnv *env, int argc, cons
         return OOM_ERROR;
     }
 
-    ref->buffer = new PCudaMatrixIntBuffer(rows, cols);
+    if(mo == ROW_MAJOR){ 
+        orientation = ROW_MAJOR;
+    }else if (mo == COLUMN_MAJOR){ 
+        orientation = COLUMN_MAJOR;
+    }else return enif_make_badarg(env);
+
+    ref->buffer = new PCudaMatrixIntBuffer(rows, cols, orientation);
     ref->destroyed = false;
 
     if (from_matrix) ref->buffer->write(env, argv[0]);
@@ -455,26 +467,38 @@ ERL_NIF_TERM pteracuda_nifs_new_matrix_float_buffer(ErlNifEnv *env, int argc, co
     unsigned  rows; 
     unsigned  cols;
     bool from_matrix = false;
+    MatrixOrientation orientation = ROW_MAJOR;
+    unsigned int mo;
 
-    if (argc == 1) {
+    if (argc == 2) {
         ERL_NIF_TERM head;
-        ERL_NIF_TERM tail;
-        enif_get_list_length(env, argv[0], &rows);
-        enif_get_list_cell(env, argv[0], &head, &tail);
-        enif_get_list_length(env, head, &cols);
+        ERL_NIF_TERM tail;        
+        if(!enif_get_list_length(env, argv[0], &rows) ||
+           !enif_get_list_cell(env, argv[0], &head, &tail) ||
+           !enif_get_list_length(env, head, &cols) ||
+           !enif_get_uint(env, argv[1], &mo)) return enif_make_badarg(env);
         from_matrix = true;
-    }else if (argc !=2 || !enif_get_uint(env, argv[0], &rows) || !enif_get_uint(env, argv[1], &cols)) {
+    }else if (argc !=3 || 
+              !enif_get_uint(env, argv[0], &rows) || 
+              !enif_get_uint(env, argv[1], &cols)||
+              !enif_get_uint(env, argv[2], &mo)) {
         return enif_make_badarg(env);
     }
+
+    if(mo == ROW_MAJOR){ 
+        orientation = ROW_MAJOR;
+    }else if (mo == COLUMN_MAJOR){ 
+        orientation = COLUMN_MAJOR;
+    }else return enif_make_badarg(env);
+
 
     PCudaBufferRef *ref = (PCudaBufferRef *) enif_alloc_resource(pteracuda_buffer_resource, sizeof(PCudaBufferRef));
     if (!ref) {
         return OOM_ERROR;
     }
 
-    ref->buffer = new PCudaMatrixFloatBuffer(rows, cols);
+    ref->buffer = new PCudaMatrixFloatBuffer(rows, cols, orientation);
     ref->destroyed = false;
-
     if (from_matrix) ref->buffer->write(env, argv[0]);
 
     ERL_NIF_TERM res = enif_make_resource(env, ref);
