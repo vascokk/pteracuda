@@ -24,7 +24,6 @@ PCudaMatrixFloatBuffer::PCudaMatrixFloatBuffer(unsigned int rows, unsigned int c
     this->_rows = rows;
     this->_cols = cols;
     this->orientation = orientation;
-    //this->data = new std::vector<double>(rows*cols);
 }
 
 PCudaMatrixFloatBuffer::~PCudaMatrixFloatBuffer() {
@@ -34,7 +33,7 @@ unsigned int PCudaMatrixFloatBuffer::size() {
     return this->data->size();
 }
 
-//CUBLAS uses column major matrices. this method converts Erlang row major matrix ("list-of-lists") to column major one dimensional vector
+
 void PCudaMatrixFloatBuffer::write(ErlNifEnv *env, ERL_NIF_TERM data) {
     ERL_NIF_TERM head_row;
     ERL_NIF_TERM head,tail;
@@ -45,15 +44,14 @@ void PCudaMatrixFloatBuffer::write(ErlNifEnv *env, ERL_NIF_TERM data) {
     unsigned C = this->_cols; 
     unsigned long idx = 0;
    
+    //CUBLAS uses column major matrices. this converts Erlang row major matrix ("list-of-lists") to column major one dimensional vector   
     if(this->orientation == ROW_MAJOR){
         while (enif_get_list_cell(env, data, &head_row, &data)) {
           while (enif_get_list_cell(env, head_row, &head, &head_row))
             if (enif_get_double(env, head, &value)) {
-                //this->data->push_back(value);
                 this->data->at((IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) ) = value;
                 ++idx;
             }else if (enif_get_long(env, head, &lvalue)) {
-                //this->data->push_back((double)lvalue);
                 this->data->at(IDX2C(IDX2RRM(idx,C), IDX2CRM(idx,C), ld)) = (double)lvalue;
                 ++idx;
             }
@@ -75,7 +73,6 @@ void PCudaMatrixFloatBuffer::write(ErlNifEnv *env, ERL_NIF_TERM data) {
 }
 
 
-//converts column major vector to Erlang row major "list-of-lists"
 ERL_NIF_TERM PCudaMatrixFloatBuffer::toErlTerms(ErlNifEnv *env) {
     std::vector<double>::iterator iter;
     ERL_NIF_TERM retval = enif_make_list(env, 0);

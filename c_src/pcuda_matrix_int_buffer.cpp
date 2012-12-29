@@ -10,7 +10,6 @@ PCudaMatrixIntBuffer::PCudaMatrixIntBuffer(unsigned int rows, unsigned int cols,
     this->_rows = rows;
     this->_cols = cols;
     this->orientation = orientation;
-    //this->data = new std::vector<long>(rows*cols);
 }
 
 PCudaMatrixIntBuffer::~PCudaMatrixIntBuffer() {
