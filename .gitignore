@@ -7,3 +7,5 @@ nvcc_compile.cmd
 pteracuda.sublime-project
 pteracuda.sublime-workspace
 tests.txt
+*.swp
+*~

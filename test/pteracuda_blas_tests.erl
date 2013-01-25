@@ -35,7 +35,13 @@ benchmark_test_() ->
           {timeout, 60*60,
            fun() ->
                   mmul()
-           end}.	
+           end}.
+
+transpose_benchmark_test_() ->
+          {timeout, 60*60,
+           fun() ->
+                  transp_bm()
+           end}.           
 
 %% Matrix-matrix multiplication benchmark
 mmul() ->
@@ -181,7 +187,7 @@ smm_test()->
     ok = pteracuda_buffer:destroy(Buf_B),
     ok = pteracuda_context:destroy(Ctx).
 
-transpose_benchmark_test()->
+transpose_test()->
     Rows = 500,
     Cols = 500,
     {T1, T2, T3} = erlang:now(),
@@ -191,10 +197,27 @@ transpose_benchmark_test()->
 
     {ok, Buf_M} = pteracuda_buffer:new(matrix, float, row_major, M),
     {ok, Buf_MT} =  pteracuda_buffer:new(matrix, float, row_major, Cols, Rows),
+    ok = pteracuda_blas:transpose(Ctx, Buf_M, Buf_MT),
+    ok = pteracuda_buffer:destroy(Buf_M),
+    ok = pteracuda_buffer:destroy(Buf_MT),
+    ok = pteracuda_context:destroy(Ctx).
+
+
+transp_bm()->
+    Rows = 2000,
+    Cols = 2000,
+    {T1, T2, T3} = erlang:now(),
+    random:seed(T1, T2, T3),
+    M = [[random:uniform(1000)+0.1 || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)],
+    {ok, Ctx} = pteracuda_context:new(),
+
+    {ok, Buf_M} = pteracuda_buffer:new(matrix, float, row_major, M),
+    {ok, Buf_MT} =  pteracuda_buffer:new(matrix, float, row_major, Cols, Rows),
     Fun = fun(M1) -> transpose(M1) end,
-    {Time1, _} = timer:tc(pteracuda_nifs, transpose, [Ctx, Buf_M, Buf_MT]),
+    {Time1, _} = timer:tc(pteracuda_blas, transpose, [Ctx, Buf_M, Buf_MT]),
     {Time2, _} = timer:tc(Fun, [M]),
     ok = pteracuda_buffer:destroy(Buf_M),
+    ok = pteracuda_buffer:destroy(Buf_MT),
     ok = pteracuda_context:destroy(Ctx),
 
     ?debugMsg(io_lib:format("Transpose GPU:~p",[Time1])),
