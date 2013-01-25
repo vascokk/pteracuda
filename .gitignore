@@ -9,3 +9,4 @@ pteracuda.sublime-workspace
 tests.txt
 *.swp
 *~
+*.pdb
