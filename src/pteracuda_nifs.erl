@@ -49,7 +49,8 @@
          smm/4]).
 
 -export([sigmoid/3,
-         tanh/3]).
+         tanh/3,
+         log/3]).
 
 -type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
 -type orientation_C() :: ?ROW_MAJOR | ?COLUMN_MAJOR.
@@ -167,6 +168,9 @@ sigmoid(_Ctx, _A, _B) ->
 tanh(_Ctx, _A, _B) ->
     ?MISSING_NIF.
 
+-spec log(term(), float_vector()|float_matrix(), float_vector()|float_matrix()) -> ok.
+log(_Ctx, _A, _B) ->
+    ?MISSING_NIF.
 
 init() ->
     PrivDir = case code:priv_dir(pteracuda) of

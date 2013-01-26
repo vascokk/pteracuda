@@ -70,6 +70,7 @@ extern "C" {
 
     ERL_NIF_TERM pcuda_nifs_sigmoid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
     ERL_NIF_TERM pcuda_nifs_tanh(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+    ERL_NIF_TERM pcuda_nifs_log(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
 
     static ErlNifFunc pteracuda_nif_funcs[] = {
@@ -106,7 +107,8 @@ extern "C" {
         {"geam", 10, pteracuda_nifs_geam},
         {"smm", 4, pteracuda_nifs_smm},
         {"sigmoid", 3, pcuda_nifs_sigmoid},
-        {"tanh", 3, pcuda_nifs_tanh}
+        {"tanh", 3, pcuda_nifs_tanh},
+        {"log", 3, pcuda_nifs_log}        
 
     };
 }
@@ -763,6 +765,28 @@ ERL_NIF_TERM pcuda_nifs_tanh(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]
     cuCtxSetCurrent(ctxRef->ctx);
 
     pcuda_tanh(((PCudaFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaFloatBuffer*)ref_B->buffer)->get_data());
+    
+    return ATOM_OK;
+}
+
+ERL_NIF_TERM pcuda_nifs_log(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    PCudaContextRef *ctxRef;
+    PCudaBufferRef *ref_A, *ref_B;
+    
+    if (argc != 3 || !enif_get_resource(env, argv[0], pteracuda_context_resource, (void **) &ctxRef) ||
+        !enif_get_resource(env, argv[1], pteracuda_buffer_resource, (void **) &ref_A) ||
+        !enif_get_resource(env, argv[2], pteracuda_buffer_resource, (void **) &ref_B)
+        ) {
+        return enif_make_badarg(env);
+    }
+
+    if(((PCudaFloatBuffer*)ref_A->buffer)->size() != ((PCudaFloatBuffer*)ref_B->buffer)->size()){
+        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Buffer A size does not match buffer B size")); 
+    }
+
+    cuCtxSetCurrent(ctxRef->ctx);
+
+    pcuda_log(((PCudaFloatBuffer*)ref_A->buffer)->get_data(), ((PCudaFloatBuffer*)ref_B->buffer)->get_data());
     
     return ATOM_OK;
 }

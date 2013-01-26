@@ -27,6 +27,11 @@ struct sigmoid2{
   __host__ __device__ T operator()(const T &x){return tanh(x);}
 };
 
+template <typename T>
+struct log_func{
+  __host__ __device__ T operator()(const T &x){return log(x);}
+};
+
 
 void pcuda_sigmoid(std::vector<double> *a, std::vector<double> *b){
   thrust::device_vector<float> d_a = *a;
@@ -42,6 +47,15 @@ void pcuda_tanh(std::vector<double> *a, std::vector<double> *b){
   thrust::device_vector<float> d_b(b->size());
 
   thrust::transform(d_a.begin(), d_a.end(), d_b.begin(), sigmoid2<float>());
+
+  thrust::copy(d_b.begin(), d_b.end(), b->begin());
+}
+
+void pcuda_log(std::vector<double> *a, std::vector<double> *b){
+  thrust::device_vector<float> d_a = *a;
+  thrust::device_vector<float> d_b(b->size());
+
+  thrust::transform(d_a.begin(), d_a.end(), d_b.begin(), log_func<float>());
 
   thrust::copy(d_b.begin(), d_b.end(), b->begin());
 }
