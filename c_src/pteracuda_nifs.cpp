@@ -26,6 +26,7 @@
 
 #include "cuda.h"
 #include "cuda_runtime_api.h"
+#include "cublas_v2.h"
 #include "erl_nif.h"
 
 #include "pcuda_buffer.h"
@@ -532,15 +533,25 @@ ERL_NIF_TERM pteracuda_nifs_gemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
         return enif_make_badarg(env);
     }
 
-    if(((PCudaMatrixFloatBuffer*)ref_A->buffer)->rows() != m || ((PCudaMatrixFloatBuffer*)ref_A->buffer)->cols() != k){
-        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix A dimensions do not match m,k parameters")); 
+    if(transpose_a == CUBLAS_OP_N){
+        if(((PCudaMatrixFloatBuffer*)ref_A->buffer)->rows() != m || ((PCudaMatrixFloatBuffer*)ref_A->buffer)->cols() != k){
+            return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix A dimensions do not match m,k parameters")); 
+        }
+    }else{
+         if(((PCudaMatrixFloatBuffer*)ref_A->buffer)->rows() != k || ((PCudaMatrixFloatBuffer*)ref_A->buffer)->cols() != n){
+            return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix A dimensions do not match m,k parameters")); 
+        }
     }
 
-
-    if(((PCudaMatrixFloatBuffer*)ref_B->buffer)->rows() != k || ((PCudaMatrixFloatBuffer*)ref_B->buffer)->cols() != n){
-        return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix B dimensions do not match k,n parameters")); 
-    }
-
+    if(transpose_b == CUBLAS_OP_N){
+        if(((PCudaMatrixFloatBuffer*)ref_B->buffer)->rows() != k || ((PCudaMatrixFloatBuffer*)ref_B->buffer)->cols() != n){
+            return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix B dimensions do not match k,n parameters")); 
+        }
+    }else{
+        if(((PCudaMatrixFloatBuffer*)ref_B->buffer)->rows() != n || ((PCudaMatrixFloatBuffer*)ref_B->buffer)->cols() != k){
+            return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix B dimensions do not match k,n parameters")); 
+        }
+    }    
 
     if(((PCudaMatrixFloatBuffer*)ref_C->buffer)->rows() != m || ((PCudaMatrixFloatBuffer*)ref_C->buffer)->cols() != n){
         return enif_make_tuple2(env, ATOM_ERROR, enif_make_atom(env, "Matrix C dimensions do not match m,n parameters")); 

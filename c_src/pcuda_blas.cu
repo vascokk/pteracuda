@@ -31,15 +31,31 @@ void pcuda_gemm(const int transpose_a, const int transpose_b, const int m, const
     cublasOperation_t _transpose_a, _transpose_b;
 
     switch (transpose_a){
-        case 0: _transpose_a = CUBLAS_OP_N;break;
-        case 1: _transpose_a = CUBLAS_OP_T;break;
-        case 2: _transpose_a = CUBLAS_OP_C;break;
+        case 0: 
+            _transpose_a = CUBLAS_OP_N;
+            break;
+        case 1: 
+            _transpose_a = CUBLAS_OP_T;
+            lda = k;
+            break;
+        case 2: 
+            _transpose_a = CUBLAS_OP_C;
+            lda = k;
+            break;
     }
 
     switch (transpose_b){
-        case 0: _transpose_b = CUBLAS_OP_N;break;
-        case 1: _transpose_b = CUBLAS_OP_T;break;
-        case 2: _transpose_b = CUBLAS_OP_C;break;
+        case 0: 
+            _transpose_b = CUBLAS_OP_N;
+            break;
+        case 1: 
+            _transpose_b = CUBLAS_OP_T;
+            ldb = n;
+            break;
+        case 2: 
+            _transpose_b = CUBLAS_OP_C;
+            ldb = n;
+            break;
     }
 
     //Fallback to float to support cuda architecture < 1.3  

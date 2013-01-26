@@ -50,7 +50,7 @@ mmul() ->
     _n = 300,
     _alpha = 1.0,
     _beta= 0.0,
-	  {T1, T2, T3} = erlang:now(),
+	{T1, T2, T3} = erlang:now(),
     random:seed(T1, T2, T3),
     Rows = _m,
     Cols = _k,
@@ -112,6 +112,27 @@ gemm_test()->
     ok = pteracuda_buffer:destroy(Buf_B),
     ok = pteracuda_buffer:destroy(Buf_C),
     ok = pteracuda_context:destroy(Ctx).
+
+gemm_matrix_4_2_test()->
+    {ok, Ctx} = pteracuda_context:new(),
+    A = [[7,8],[4,4],[3,7],[2,6]], %row major
+    B = [[7,8],[4,4],[3,7],[2,6]], %row major
+    _m = 2,%num_rows transpose_op(A) and C
+    _k = 4,%num cols transpose_op(A) and rows transpose_op(B)
+    _n = 2,%num_cols transpose_op(B) and C
+    _alpha = 1.0,
+    _beta= 0.0,
+    C = [[78.0,105.0],[105.0,165.0]], %row major
+    {ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major,A),
+    {ok, Buf_B} = pteracuda_buffer:new(matrix, float, row_major,B),
+    {ok, Buf_C} = pteracuda_buffer:new(matrix, float, row_major,_m,_n),
+    ok = pteracuda_blas:gemm(Ctx, transpose, no_transpose, _m, _n, _k, _alpha, Buf_A, Buf_B, _beta, Buf_C),
+    {ok, C} = pteracuda_buffer:read(Buf_C),
+    ok = pteracuda_buffer:destroy(Buf_A),
+    ok = pteracuda_buffer:destroy(Buf_B),
+    ok = pteracuda_buffer:destroy(Buf_C),
+    ok = pteracuda_context:destroy(Ctx).
+
 
 
 %  GEMV: y <- α op ( A ) x + β y

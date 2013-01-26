@@ -1,4 +1,4 @@
--module(pteracuda_buffer_tests).
+    -module(pteracuda_buffer_tests).
 
 -compile(export_all).
 
