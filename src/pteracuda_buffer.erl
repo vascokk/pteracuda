@@ -12,7 +12,11 @@
          sort/2,
          contains/3,
          intersection/3,
-         minmax/2]).
+         minmax/2,
+         ones/2,
+         ones/5,
+         zeros/2,
+         zeros/5]).
 
 -spec new(data_type) -> {ok, buffer()}.
 new(integer) ->
@@ -67,6 +71,31 @@ new(matrix, integer, Orientation, Matrix) ->
     {ok, #pc_buffer{type = matrix, data_type=integer, orientation=Orientation, ref=Buf}}.
 
 
+-spec ones(data_type, integer()) -> {ok, buffer()}.
+ones(float, Size) ->
+    {ok, Buf} = new(float),
+    ok = write(Buf, [1.0 || X<-lists:seq(1, Size)]),
+    {ok, Buf}.
+
+-spec ones(matrix, data_type(), orientation(), matrix_rows(), matrix_columns()) -> {ok, buffer()}.
+ones(matrix, float, Orientation, Rows, Cols) ->
+    {ok, Buf} = new(matrix, float, Orientation, Rows, Cols),
+    ok = write(Buf, [[1.0 || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)]),
+    {ok, Buf}.
+
+
+-spec zeros(data_type, integer()) -> {ok, buffer()}.
+zeros(float, Size) ->
+    {ok, Buf} = new(float),
+    ok = write(Buf, [0.0 || X<-lists:seq(1, Size)]),
+    {ok, Buf}.
+
+-spec zeros(matrix, data_type(), orientation(), matrix_rows(), matrix_columns()) -> {ok, buffer()}.
+zeros(matrix, float, Orientation, Rows, Cols) ->
+    {ok, Buf} = new(matrix, float, Orientation, Rows, Cols),
+    ok = write(Buf, [[0.0 || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)]),
+    {ok, Buf}.
+
 destroy(#pc_buffer{ref=Ref}) ->
     pteracuda_nifs:destroy_buffer(Ref),
     ok.
@@ -103,3 +132,4 @@ intersection(#pc_context{ref=Ctx}, #pc_buffer{ref=Buf1}, #pc_buffer{ref=Buf2}) -
 
 minmax(#pc_context{ref=Ctx}, #pc_buffer{ref=Buf}) ->
     pteracuda_nifs:buffer_minmax(Ctx, Buf).
+

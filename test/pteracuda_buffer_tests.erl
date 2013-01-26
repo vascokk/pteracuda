@@ -63,4 +63,26 @@ int_matrix_buffer_negative_test() ->
     ok = pteracuda_buffer:destroy(Buf_M),
     ok = pteracuda_context:destroy(C).
 
+ones_1_test() ->
+    {Res, Buf_ones} = pteracuda_buffer:ones(float, 5),
+    ?assertEqual(Res,ok),
+    ?assertEqual({ok, [1.0,1.0,1.0,1.0,1.0]} , pteracuda_buffer:read(Buf_ones)),
+    ok = pteracuda_buffer:destroy(Buf_ones).
 
+ones_2_test() ->
+    {Res, Buf_ones} = pteracuda_buffer:ones(matrix, float, row_major, 2, 3),
+    ?assertEqual(Res,ok),
+    ?assertEqual({ok, [[1.0,1.0,1.0],[1.0,1.0,1.0]]} , pteracuda_buffer:read(Buf_ones)),
+    ok = pteracuda_buffer:destroy(Buf_ones).
+
+zeros_1_test() ->
+    {Res, Buf_zeros} = pteracuda_buffer:zeros(float, 5),
+    ?assertEqual(Res,ok),
+    ?assertEqual({ok, [0.0,0.0,0.0,0.0,0.0]} , pteracuda_buffer:read(Buf_zeros)),
+    ok = pteracuda_buffer:destroy(Buf_zeros).
+
+zeros_2_test() ->
+    {Res, Buf_zeros} = pteracuda_buffer:zeros(matrix, float, row_major, 2, 3),
+    ?assertEqual(Res,ok),
+    ?assertEqual({ok, [[0.0,0.0,0.0],[0.0,0.0,0.0]]} , pteracuda_buffer:read(Buf_zeros)),
+    ok = pteracuda_buffer:destroy(Buf_zeros).
