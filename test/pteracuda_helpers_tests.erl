@@ -1,0 +1,54 @@
+-module(pteracuda_helpers_tests).
+
+-compile(export_all).
+
+-include("pteracuda.hrl").
+
+-include_lib("eunit/include/eunit.hrl").
+
+
+gemm_test()->
+    A = [[7,8],[4,4],[3,7],[2,6]], %row major
+    B = [[7,8],[4,4],[3,7],[2,6]], %row major
+    _alpha = 1.0,
+    _beta= 0.0,
+    C = [[0.0,0.0],[0.0,0.0]], %row major
+    Res = pteracuda_helpers:gemm(transpose, no_transpose, _alpha, A, B, _beta, C),
+    ?assertEqual([[78.0,105.0],[105.0,165.0]], Res).
+
+sum_by_cols_test()->
+	A = [[7, 8],[4, 4],[3, 7],[2, 6]],
+	Res = pteracuda_helpers:sum_by_cols(A),
+	?assertEqual([15.0, 8.0, 10.0, 8.0], Res).
+
+gemv_test()->
+    A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
+    _alpha = 1.0,
+    _beta = 0.0,
+    X = [2.0,5.0,1.0,7.0],
+    Y = [0.0, 0.0], 
+    Res = pteracuda_helpers:gemv(no_transpose , _alpha, A, X, _beta, Y),
+    ?assertEqual([60.0,75.0], Res).
+
+ saxpy_test()->
+    _a = 2.0, %!!!! this has to be float
+    X = [2.0, 5.0, 1.0, 7.0],
+    Y = [0.0, 0.0, 0.0, 0.0], 
+    Res = pteracuda_helpers:saxpy(_a, X, Y),
+    ?assertEqual([4.0, 10.0, 2.0, 14.0], Res).
+
+m2v_test() ->
+	A = [[7,8],[4,4],[3,7],[2,6]],
+	Res = pteracuda_helpers:m2v(A),
+	?assertEqual([7,8,4,4,3,7,2,6], Res).
+
+v2m_test() ->
+	A = [7,8,4,4,3,7,2,6],
+	Res = pteracuda_helpers:v2m(A, 2),
+	?assertEqual([[7,8],[4,4],[3,7],[2,6]], Res).
+
+transpose_test()->
+	A = [[1,1,1],[2,2,2],[3,3,3],[4,4,4]],
+    Res = pteracuda_helpers:transpose(A),
+    ?assertEqual([[1.0, 2.0, 3.0, 4.0],[1.0, 2.0, 3.0, 4.0],[1.0, 2.0, 3.0, 4.0]], Res).
+
