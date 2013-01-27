@@ -13,12 +13,9 @@
 -type transpose_op() :: transpose | no_transpose | conjugate_transpose.
 
 
-
-
 -spec sum_by_cols(float_matrix()) -> float_vector(). 
 sum_by_cols(Matrix) ->
 	{ok, Ctx} = pteracuda_context:new(),
-    %A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
     _m = length(Matrix), %rows A
     _n = length(hd(Matrix)), %columns A
     _alpha = 1.0,
@@ -26,7 +23,6 @@ sum_by_cols(Matrix) ->
     {ok, Ones} = pteracuda_buffer:ones(float, _m),  
     {ok, Buf_M} = pteracuda_buffer:new(matrix, float, row_major, Matrix),
     {ok, Buf_Sum} = pteracuda_buffer:new(float, _m),
-    %pteracuda_buffer:write(Buf_Y, Y),
     ok = pteracuda_blas:gemv(Ctx, no_transpose , _m, _n, _alpha, Buf_M, Ones, _beta, Buf_Sum),
     {ok, Res} = pteracuda_buffer:read(Buf_Sum),
     ok = pteracuda_buffer:destroy(Buf_M),
@@ -38,7 +34,6 @@ sum_by_cols(Matrix) ->
 -spec gemv(transpose_op(), float(), float_matrix(), float_matrix(), float(), float_matrix()) -> float_vector().
 gemv(_transpose_A, _alpha, A, X, _beta, Y) ->
 	{ok, Ctx} = pteracuda_context:new(),
-    %A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
     _m = length(A), %rows A
     _n = length(hd(A)), %columns A
     {ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major, A),
@@ -67,6 +62,7 @@ saxpy(_a, X, Y) ->
     ok = pteracuda_context:destroy(Ctx),
     Res.
 
+-spec gemm(transpose_op(), transpose_op(), float(), float_matrix(), float_matrix(), float(), float_matrix()) -> float_matrix().
 gemm(_transpose_A, _transpose_B, _alpha, A, B, _beta, C) ->
     {ok, Ctx} = pteracuda_context:new(),
     case _transpose_A of 
@@ -90,6 +86,7 @@ gemm(_transpose_A, _transpose_B, _alpha, A, B, _beta, C) ->
     ok = pteracuda_context:destroy(Ctx),
     Res.
 
+-spec m2v(float_matrix()) -> float_vector().
 m2v(Matrix) ->
 	lists:append(Matrix).
 
@@ -102,6 +99,7 @@ v2m(List, Cols) ->
 	              end, [], List)
 	end.
 
+-spec transpose(float_matrix()) -> float_matrix().
 transpose(Matrix) ->
     Rows = length(Matrix),
     Cols = length(hd(Matrix)),
