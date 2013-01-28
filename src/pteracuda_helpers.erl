@@ -38,7 +38,7 @@ sum_by_cols(Matrix) ->
     ok = pteracuda_context:destroy(Ctx),
     Res.
 
--spec gemv(transpose_op(), float(), float_matrix(), float_matrix(), float(), float_matrix()) -> float_vector().
+-spec gemv(transpose_op(), float(), float_matrix(), float_vector(), float(), float_vector()) -> float_vector().
 gemv(_transpose_A, _alpha, A, X, _beta, Y) ->
 	{ok, Ctx} = pteracuda_context:new(),
     _m = length(A), %rows A
@@ -69,7 +69,7 @@ saxpy(_a, X, Y) ->
     ok = pteracuda_context:destroy(Ctx),
     Res.
 
--spec gemm(transpose_op(), transpose_op(), float(), float_matrix(), float_matrix(), float(), float_matrix()) -> float_matrix().
+-spec gemm(transpose_op(), transpose_op(), float(), float_matrix(), float_matrix(), float(), float_matrix()) -> float_matrix().	 
 gemm(_transpose_A, _transpose_B, _alpha, A, B, _beta, C) ->
     {ok, Ctx} = pteracuda_context:new(),
     case _transpose_A of 
@@ -84,7 +84,10 @@ gemm(_transpose_A, _transpose_B, _alpha, A, B, _beta, C) ->
     end,
     {ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major,A),
     {ok, Buf_B} = pteracuda_buffer:new(matrix, float, row_major,B),
-    {ok, Buf_C} = pteracuda_buffer:new(matrix, float, row_major,_m,_n),
+    case C of
+    	[] -> {ok, Buf_C} = pteracuda_buffer:zeros(matrix, float, row_major, _m, _n);
+    	 _ -> {ok, Buf_C} = pteracuda_buffer:new(matrix, float, row_major, C)
+    end,    
     ok = pteracuda_blas:gemm(Ctx, _transpose_A, _transpose_B, _m, _n, _k, _alpha, Buf_A, Buf_B, _beta, Buf_C),
     {ok, Res} = pteracuda_buffer:read(Buf_C),
     ok = pteracuda_buffer:destroy(Buf_A),

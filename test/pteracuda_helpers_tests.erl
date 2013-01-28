@@ -16,6 +16,14 @@ gemm_test()->
     Res = pteracuda_helpers:gemm(transpose, no_transpose, _alpha, A, B, _beta, C),
     ?assertEqual([[78.0,105.0],[105.0,165.0]], Res).
 
+gemm_2_test()->
+    A = [[7,8],[4,4],[3,7],[2,6]], %row major
+    B = [[7,8],[4,4],[3,7],[2,6]], %row major
+    _alpha = 1.0,
+    _beta= 0.0,
+    Res = pteracuda_helpers:gemm(transpose, no_transpose, _alpha, A, B, _beta, []),
+    ?assertEqual([[78.0,105.0],[105.0,165.0]], Res).
+
 sum_by_cols_test()->
 	A = [[7, 8],[4, 4],[3, 7],[2, 6]],
 	Res = pteracuda_helpers:sum_by_cols(A),
