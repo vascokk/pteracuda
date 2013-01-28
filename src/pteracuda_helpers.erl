@@ -2,13 +2,20 @@
 
 -include("include/pteracuda.hrl").
 
+%% BLAS helpers
 -export([sum_by_cols/1, 
 	     gemv/6, 
 	     saxpy/3,
 	     gemm/7,
+	     smm/2,
 	     m2v/1,
 	     v2m/2,
 	     transpose/1]).
+
+%% Kernels helpers
+-export([sigmoid/1,
+	     tanh/1,
+	     log/1]).
 
 -type transpose_op() :: transpose | no_transpose | conjugate_transpose.
 
@@ -86,6 +93,20 @@ gemm(_transpose_A, _transpose_B, _alpha, A, B, _beta, C) ->
     ok = pteracuda_context:destroy(Ctx),
     Res.
 
+smm(_alpha, A)->
+    {ok, Ctx} = pteracuda_context:new(),
+    _m = length(A), %rows A
+    _n = length(hd(A)), %columns A
+    {ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major, A),
+    {ok, Buf_B} = pteracuda_buffer:new(matrix, float, row_major, _m, _n),
+    ok = pteracuda_blas:smm(Ctx, _alpha, Buf_A, Buf_B),
+    {ok, Res} = pteracuda_buffer:read(Buf_B),
+    ok = pteracuda_buffer:destroy(Buf_A),
+    ok = pteracuda_buffer:destroy(Buf_B),
+    ok = pteracuda_context:destroy(Ctx),
+    Res.
+
+
 -spec m2v(float_matrix()) -> float_vector().
 m2v(Matrix) ->
 	lists:append(Matrix).
@@ -112,3 +133,78 @@ transpose(Matrix) ->
     ok = pteracuda_buffer:destroy(Buf_MT),
     ok = pteracuda_context:destroy(Ctx),
     Res.
+
+-spec sigmoid(float_matrix()) -> float_matrix();
+             (float_vector()) -> float_vector().
+sigmoid(A) when is_list(hd(A)) ->
+	{ok, Ctx} = pteracuda_context:new(),
+	{ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major, A),
+	{ok, Buf_B} = pteracuda_buffer:new(matrix, float, row_major, length(A), length(hd(A))),
+	
+	ok = pteracuda_kernels:sigmoid(Ctx, Buf_A, Buf_B),
+	{ok, Res} = pteracuda_buffer:read(Buf_B),
+	ok = pteracuda_buffer:destroy(Buf_A),
+	ok = pteracuda_buffer:destroy(Buf_B),
+	ok = pteracuda_context:destroy(Ctx),
+	Res;
+sigmoid(A) when is_number(hd(A)) ->
+	{ok, Ctx} = pteracuda_context:new(),
+	{ok, Buf_A} = pteracuda_buffer:new(float),
+	pteracuda_buffer:write(Buf_A, A),
+	{ok, Buf_B} = pteracuda_buffer:new(float, length(A)),
+	ok = pteracuda_kernels:sigmoid(Ctx, Buf_A, Buf_B),
+	{ok, Res} = pteracuda_buffer:read(Buf_B),
+	ok = pteracuda_buffer:destroy(Buf_A),
+	ok = pteracuda_buffer:destroy(Buf_B),
+	ok = pteracuda_context:destroy(Ctx),
+	Res.
+
+-spec tanh(float_matrix()) -> float_matrix();
+             (float_vector()) -> float_vector().
+tanh(A) when is_list(hd(A)) ->
+	{ok, Ctx} = pteracuda_context:new(),
+	{ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major, A),
+	{ok, Buf_B} = pteracuda_buffer:new(matrix, float, row_major, length(A), length(hd(A))),
+	
+	ok = pteracuda_kernels:tanh(Ctx, Buf_A, Buf_B),
+	{ok, Res} = pteracuda_buffer:read(Buf_B),
+	ok = pteracuda_buffer:destroy(Buf_A),
+	ok = pteracuda_buffer:destroy(Buf_B),
+	ok = pteracuda_context:destroy(Ctx),
+	Res;
+tanh(A) when is_number(hd(A)) ->
+	{ok, Ctx} = pteracuda_context:new(),
+	{ok, Buf_A} = pteracuda_buffer:new(float),
+	pteracuda_buffer:write(Buf_A, A),
+	{ok, Buf_B} = pteracuda_buffer:new(float, length(A)),
+	ok = pteracuda_kernels:tanh(Ctx, Buf_A, Buf_B),
+	{ok, Res} = pteracuda_buffer:read(Buf_B),
+	ok = pteracuda_buffer:destroy(Buf_A),
+	ok = pteracuda_buffer:destroy(Buf_B),
+	ok = pteracuda_context:destroy(Ctx),
+	Res.
+
+-spec log(float_matrix()) -> float_matrix();
+         (float_vector()) -> float_vector().
+log(A) when is_list(hd(A)) ->
+	{ok, Ctx} = pteracuda_context:new(),
+	{ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major, A),
+	{ok, Buf_B} = pteracuda_buffer:new(matrix, float, row_major, length(A), length(hd(A))),
+	
+	ok = pteracuda_kernels:log(Ctx, Buf_A, Buf_B),
+	{ok, Res} = pteracuda_buffer:read(Buf_B),
+	ok = pteracuda_buffer:destroy(Buf_A),
+	ok = pteracuda_buffer:destroy(Buf_B),
+	ok = pteracuda_context:destroy(Ctx),
+	Res;
+log(A) when is_number(hd(A)) ->
+	{ok, Ctx} = pteracuda_context:new(),
+	{ok, Buf_A} = pteracuda_buffer:new(float),
+	pteracuda_buffer:write(Buf_A, A),
+	{ok, Buf_B} = pteracuda_buffer:new(float, length(A)),
+	ok = pteracuda_kernels:log(Ctx, Buf_A, Buf_B),
+	{ok, Res} = pteracuda_buffer:read(Buf_B),
+	ok = pteracuda_buffer:destroy(Buf_A),
+	ok = pteracuda_buffer:destroy(Buf_B),
+	ok = pteracuda_context:destroy(Ctx),
+	Res.
