@@ -102,3 +102,12 @@ log_2_test()->
 	Sig = [[4.3567, 4.6540, 4.6540, 5.1059],[4.3567, 4.6540, 4.6540, 5.1059]], 
 	Res = pteracuda_helpers:log(A),
 	?assertEqual(Sig, [[element(1,string:to_float(hd(io_lib:format("~.4f",[X])))) || X<-M] || M<-Res]).	
+
+ones_test() ->
+	?assertEqual(pteracuda_helpers:ones(5), [1.0, 1.0, 1.0, 1.0, 1.0]).
+ones_2_test() ->
+	?assertEqual(pteracuda_helpers:ones(2,2), [[1.0, 1.0], [1.0, 1.0]]).
+zeros_test() ->
+	?assertEqual(pteracuda_helpers:zeros(5), [0.0, 0.0, 0.0, 0.0, 0.0]).
+zeros_2_test() ->
+	?assertEqual(pteracuda_helpers:zeros(2,2), [[0.0, 0.0], [0.0, 0.0]]).

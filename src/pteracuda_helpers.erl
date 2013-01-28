@@ -17,6 +17,11 @@
 	     tanh/1,
 	     log/1]).
 
+-export([zeros/1,
+		 zeros/2,
+		 ones/1,
+		 ones/2]).
+
 -type transpose_op() :: transpose | no_transpose | conjugate_transpose.
 
 
@@ -211,3 +216,19 @@ log(A) when is_number(hd(A)) ->
 	ok = pteracuda_buffer:destroy(Buf_B),
 	ok = pteracuda_context:destroy(Ctx),
 	Res.
+
+-spec ones(integer()) -> float_vector().
+ones(Size) ->
+    [1.0 || X<-lists:seq(1, Size)].
+
+-spec ones(matrix_rows(), matrix_columns()) -> float_matrix().
+ones(Rows, Cols) ->
+    [[1.0 || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)].
+
+-spec zeros(integer()) -> buffer().
+zeros(Size) ->
+    [0.0 || X<-lists:seq(1, Size)].
+
+-spec zeros(matrix_rows(), matrix_columns()) -> buffer().
+zeros(Rows, Cols) ->
+    [[0.0 || _ <- lists:seq(1, Cols)] || _ <- lists:seq(1, Rows)].
