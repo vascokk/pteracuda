@@ -38,6 +38,22 @@ gemv_test()->
     Res = pteracuda_helpers:gemv(no_transpose , _alpha, A, X, _beta, Y),
     ?assertEqual([60.0,75.0], Res).
 
+gemv_2_test()->
+    A = [[4.0,6.0,8.0,2.0],[5.0,7.0,9.0,3.0]],
+    _alpha = 1.0,
+    _beta = 0.0,
+    X = [2.0,5.0,1.0,7.0],
+    Res = pteracuda_helpers:gemv(no_transpose , _alpha, A, X, _beta, []),
+    ?assertEqual([60.0,75.0], Res).
+
+gemv_3_test()->
+    A = [1,2,3,4,5],
+    B = [2,2,2,2,2],
+    _alpha = 1.0,
+    _beta = 0.0,
+    Res = pteracuda_helpers:gemv(no_transpose, _alpha, A, B, _beta, []),
+    ?assertEqual([30.0], Res).
+
  saxpy_test()->
     _a = 2.0, %!!!! this has to be float
     X = [2.0, 5.0, 1.0, 7.0],

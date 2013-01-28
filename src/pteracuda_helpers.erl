@@ -44,14 +44,26 @@ sum_by_cols(Matrix) ->
     Res.
 
 -spec gemv(transpose_op(), float(), float_matrix(), float_vector(), float(), float_vector()) -> float_vector().
-gemv(_transpose_A, _alpha, A, X, _beta, Y) ->
+gemv(_transpose_A, _alpha, A, X, _beta, Y) when is_number(hd(A)) ->
+	gemv(_transpose_A, _alpha, [A], X, _beta, Y);
+gemv(_transpose_A, _alpha, A, X, _beta, Y) when is_list(hd(A)) ->
 	{ok, Ctx} = pteracuda_context:new(),
-    _m = length(A), %rows A
-    _n = length(hd(A)), %columns A
+    %_m = length(A), %rows A
+    %_n = length(hd(A)), %columns A
+    case _transpose_A of 
+    	no_transpose -> _m = length(A), %num_rows transpose_op(A) 
+    		  		    _n = length(hd(A));%num cols transpose_op(A)
+    		  	   _->  _m = length(hd(A)),
+    		  		    _n = length(A)
+    end,
     {ok, Buf_A} = pteracuda_buffer:new(matrix, float, row_major, A),
     {ok, Buf_X} = pteracuda_buffer:new(float), 
     pteracuda_buffer:write(Buf_X, X), 
-    {ok, Buf_Y} = pteracuda_buffer:new(float, _m),
+    case Y of
+    	[] -> {ok, Buf_Y} = pteracuda_buffer:zeros(float, _m);
+    	 _ -> {ok, Buf_Y} = pteracuda_buffer:new(float),
+    	 	  pteracuda_buffer:write(Buf_Y, Y)		
+    end, 
     ok = pteracuda_blas:gemv(Ctx, _transpose_A , _m, _n, _alpha, Buf_A, Buf_X, _beta, Buf_Y),
     {ok, Res} = pteracuda_buffer:read(Buf_Y),
     ok = pteracuda_buffer:destroy(Buf_A),
