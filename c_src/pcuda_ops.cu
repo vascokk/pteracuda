@@ -4,7 +4,6 @@
 #include <algorithm>
 
 #include "cuda.h"
-#include "cublas_v2.h"
 
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>

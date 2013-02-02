@@ -15,6 +15,8 @@
 #include <thrust/set_operations.h>
 #include <thrust/extrema.h>
 
+#include "pcuda_blas.h"
+
 struct CastToFloat
 {
     float operator()(double value) const { return static_cast<float>(value);}
@@ -111,18 +113,6 @@ void pcuda_gemv(const int transpose, const int m, const int n, const double alph
     cublasDestroy(handle);
 }
 
-template <typename T>
-struct saxpy_functor
-{
-    const T a;
-
-    saxpy_functor(T _a) : a(_a) {}
-
-    __host__ __device__
-        T operator()(const T& x, const T& y) const { 
-            return a * x + y;
-        }
-};
 
 //SAXPY:  y <- a * x + y
 void pcuda_saxpy(double a, std::vector<double> *x, std::vector<double> *y)

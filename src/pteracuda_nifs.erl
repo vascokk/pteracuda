@@ -1,11 +1,10 @@
 -module(pteracuda_nifs).
 
--include("include/pteracuda.hrl").
 -define(NIF_API_VERSION, 2).
 -define(MISSING_NIF, throw({error, missing_nif})).
 
 -include_lib("eunit/include/eunit.hrl").
-
+-include("include/pteracuda.hrl").
 
 -on_load(init/0).
 
@@ -51,6 +50,11 @@
 -export([sigmoid/3,
          tanh/3,
          log/3]).
+
+%ML functions
+-export([gd/6,
+         gd_learn/8]).
+
 
 -type transpose_op() :: ?TRANSPOSE |?NO_TRANSPOSE | ?CONJUGATE_TRANSPOSE.
 -type orientation_C() :: ?ROW_MAJOR | ?COLUMN_MAJOR.
@@ -170,6 +174,12 @@ tanh(_Ctx, _A, _B) ->
 
 -spec log(term(), float_vector()|float_matrix(), float_vector()|float_matrix()) -> ok.
 log(_Ctx, _A, _B) ->
+    ?MISSING_NIF.
+
+gd(_Ctx, _Theta, _X, _Y, _num_features, _num_samples) ->
+    ?MISSING_NIF.
+
+gd_learn(_Ctx, _Theta, _X, _Y, _num_features, _num_samples, _learning_rate, _iterations) ->
     ?MISSING_NIF.
 
 init() ->

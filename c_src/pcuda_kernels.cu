@@ -11,27 +11,13 @@
 #include <thrust/copy.h>
 #include <thrust/sort.h>
 
-#include <cublas.h>
+//#include <cublas.h>
 
 #include <iostream>
 #include <cmath>
 #include <vector>
 
-template <typename T>
-struct sigmoid{
-	__host__ __device__ T operator()(const T &x){return 1 / (1 + exp(-x));}
-};
-
-template <typename T>
-struct sigmoid2{
-  __host__ __device__ T operator()(const T &x){return tanh(x);}
-};
-
-template <typename T>
-struct log_func{
-  __host__ __device__ T operator()(const T &x){return log(x);}
-};
-
+#include "pcuda_kernels.h"
 
 void pcuda_sigmoid(std::vector<double> *a, std::vector<double> *b){
   thrust::device_vector<float> d_a = *a;

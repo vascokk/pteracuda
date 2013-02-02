@@ -29,109 +29,22 @@
 #include "cublas_v2.h"
 #include "erl_nif.h"
 
+#include "pteracuda.h"
 #include "pcuda_buffer.h"
 #include "pcuda_ops.h"
 #include "pcuda_blas.h"
 #include "pcuda_kernels.h"
 
-extern "C" {
-    static int pteracuda_on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info);
 
-    ERL_NIF_TERM pteracuda_nifs_new_context(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_destroy_context(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+ErlNifResourceType *pteracuda_buffer_resource;
+ErlNifResourceType *pteracuda_context_resource;
 
-    ERL_NIF_TERM pteracuda_nifs_new_int_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_new_string_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_new_float_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-
-    ERL_NIF_TERM pteracuda_nifs_destroy_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_buffer_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-
-    ERL_NIF_TERM pteracuda_nifs_write_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_read_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_buffer_delete(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_buffer_insert(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_sort_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_clear_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_buffer_contains(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_copy_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_buffer_intersection(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_buffer_minmax(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-
-    ERL_NIF_TERM pteracuda_nifs_new_matrix_int_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_new_matrix_float_buffer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    
-    ERL_NIF_TERM pteracuda_nifs_gemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_gemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_saxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_transpose(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_geam(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pteracuda_nifs_smm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-
-    ERL_NIF_TERM pcuda_nifs_sigmoid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pcuda_nifs_tanh(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-    ERL_NIF_TERM pcuda_nifs_log(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-
-
-    static ErlNifFunc pteracuda_nif_funcs[] = {
-        {"new_context", 0, pteracuda_nifs_new_context},
-        {"new_context", 1, pteracuda_nifs_new_context},
-        {"destroy_context", 1, pteracuda_nifs_destroy_context},
-        {"new_int_buffer", 0, pteracuda_nifs_new_int_buffer},
-        {"new_int_buffer", 1, pteracuda_nifs_new_int_buffer},
-        {"new_string_buffer", 0, pteracuda_nifs_new_string_buffer},
-        {"new_float_buffer", 0, pteracuda_nifs_new_float_buffer},
-        {"new_float_buffer", 1, pteracuda_nifs_new_float_buffer},
-        {"destroy_buffer", 1, pteracuda_nifs_destroy_buffer},
-        {"buffer_size", 1, pteracuda_nifs_buffer_size},
-        {"write_buffer", 2, pteracuda_nifs_write_buffer},
-        {"buffer_delete", 2, pteracuda_nifs_buffer_delete},
-        {"buffer_insert", 3, pteracuda_nifs_buffer_insert},
-        {"read_buffer", 1, pteracuda_nifs_read_buffer},
-        {"sort_buffer", 2, pteracuda_nifs_sort_buffer},
-        {"clear_buffer", 1, pteracuda_nifs_clear_buffer},
-        {"buffer_contains", 3, pteracuda_nifs_buffer_contains},
-        {"copy_buffer", 2, pteracuda_nifs_copy_buffer},
-        {"buffer_intersection", 3, pteracuda_nifs_buffer_intersection},
-        {"buffer_minmax", 2, pteracuda_nifs_buffer_minmax},
-
-        {"new_matrix_int_buffer", 2, pteracuda_nifs_new_matrix_int_buffer},
-        {"new_matrix_float_buffer", 2, pteracuda_nifs_new_matrix_float_buffer},
-        {"new_matrix_int_buffer", 3, pteracuda_nifs_new_matrix_int_buffer},
-        {"new_matrix_float_buffer", 3, pteracuda_nifs_new_matrix_float_buffer},
-
-        {"gemm", 11, pteracuda_nifs_gemm},
-        {"gemv", 9, pteracuda_nifs_gemv},
-        {"saxpy", 4, pteracuda_nifs_saxpy},
-        {"transpose", 3, pteracuda_nifs_transpose},
-        {"geam", 10, pteracuda_nifs_geam},
-        {"smm", 4, pteracuda_nifs_smm},
-        {"sigmoid", 3, pcuda_nifs_sigmoid},
-        {"tanh", 3, pcuda_nifs_tanh},
-        {"log", 3, pcuda_nifs_log}        
-
-    };
-}
-
-static ErlNifResourceType *pteracuda_buffer_resource;
-static ErlNifResourceType *pteracuda_context_resource;
-
-struct PCudaBufferRef {
-    PCudaBuffer *buffer;
-    bool destroyed;
-};
-
-struct PCudaContextRef {
-    CUcontext ctx;
-    bool destroyed;
-};
-
-static ERL_NIF_TERM ATOM_TRUE;
-static ERL_NIF_TERM ATOM_FALSE;
-static ERL_NIF_TERM ATOM_OK;
-static ERL_NIF_TERM ATOM_ERROR;
-static ERL_NIF_TERM ATOM_WRONG_TYPE;
-static ERL_NIF_TERM OOM_ERROR;
+ERL_NIF_TERM ATOM_TRUE;
+ERL_NIF_TERM ATOM_FALSE;
+ERL_NIF_TERM ATOM_OK;
+ERL_NIF_TERM ATOM_ERROR;
+ERL_NIF_TERM ATOM_WRONG_TYPE;
+ERL_NIF_TERM OOM_ERROR;
 
 ERL_NIF_INIT(pteracuda_nifs, pteracuda_nif_funcs, &pteracuda_on_load, NULL, NULL, NULL);
 
@@ -722,7 +635,7 @@ ERL_NIF_TERM pteracuda_nifs_smm(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
     return ATOM_OK;
 }
 
-ERL_NIF_TERM pcuda_nifs_sigmoid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM pteracuda_nifs_sigmoid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     PCudaContextRef *ctxRef;
     PCudaBufferRef *ref_A, *ref_B;
 
@@ -747,7 +660,7 @@ ERL_NIF_TERM pcuda_nifs_sigmoid(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
 
 
 
-ERL_NIF_TERM pcuda_nifs_tanh(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM pteracuda_nifs_tanh(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     PCudaContextRef *ctxRef;
     PCudaBufferRef *ref_A, *ref_B;
     
@@ -769,7 +682,7 @@ ERL_NIF_TERM pcuda_nifs_tanh(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]
     return ATOM_OK;
 }
 
-ERL_NIF_TERM pcuda_nifs_log(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+ERL_NIF_TERM pteracuda_nifs_log(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     PCudaContextRef *ctxRef;
     PCudaBufferRef *ref_A, *ref_B;
     
@@ -790,3 +703,4 @@ ERL_NIF_TERM pcuda_nifs_log(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     
     return ATOM_OK;
 }
+
